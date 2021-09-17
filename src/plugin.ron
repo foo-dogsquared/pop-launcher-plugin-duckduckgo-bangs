@@ -1,0 +1,11 @@
+(
+    name: "Bangs",
+    description: "Search quickly with Duckduckgo bangs",
+    query: (
+        regex: "^(!)+",
+        help: "! ",
+        isolate: true,
+    ),
+    bin: (path: "bangs"),
+    icon: Name("system-search")
+)

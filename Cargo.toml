@@ -1,0 +1,12 @@
+[package]
+name = "pop-shell-launcher-bangs"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+serde = "1"
+serde_json = "1.0"
+pop-launcher = "1.0.1"
+futures-lite = "1"
+urlencoding = "2"
