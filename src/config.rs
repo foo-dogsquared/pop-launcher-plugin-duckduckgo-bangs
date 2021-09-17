@@ -3,7 +3,8 @@ use std::path::PathBuf;
 use pop_launcher::plugin_paths;
 use serde::Deserialize;
 
-/// The database file represented as a struct.
+/// The bangs database.
+/// It's based from how [Duckduckgo's own database](https://duckduckgo.com/bang.js) is structured.
 pub type Database = Vec<Bang>;
 
 #[derive(Debug, Deserialize)]
@@ -27,14 +28,17 @@ pub struct Bang {
     pub name: String,
 
     #[serde(alias = "u")]
-    pub url: String
+    pub url: String,
 }
 
 impl Bang {
     /// The full format of the bang.
     /// Useful for searching if the query is found on the bang data.
     pub fn format(&self) -> String {
-        format!("{} | {} > {} | {}", self.trigger, self.category, self.subcategory, self.domain)
+        format!(
+            "{} | {} > {} | {}",
+            self.trigger, self.category, self.subcategory, self.domain
+        )
     }
 
     /// The launcher item name for the bang.
@@ -48,6 +52,8 @@ impl Bang {
     }
 }
 
+/// Loads the database (`db.json`) from the plugin paths.
+/// Please take note it merges the database from each plugin path.
 pub fn load() -> Database {
     let mut db = Database::default();
 
@@ -61,7 +67,7 @@ pub fn load() -> Database {
             Err(why) => {
                 eprintln!("failed to read config: {}", why);
                 continue;
-            },
+            }
         };
 
         match serde_json::from_str::<Vec<Bang>>(&string) {

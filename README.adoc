@@ -1,8 +1,16 @@
-= Pop shell launcher bangs plugin
-
+= Pop launcher bangs plugin
 :toc:
 
+:prefix_query: !
+
 A link:https://github.com/pop-os/launcher[Pop launcher plugin] that provides a quick searching interface with link:https://duckduckgo.com/bang[Duckduckgo bangs].
+
+[CAUTION]
+====
+Beware, spaghetti code is ahead.
+I just wanted a reason to use Rust and explore a little bit about the renewed Pop launcher.
+Though, I'll maintain this project for a bit (before becoming inactive again ;p).
+====
 
 
 
@@ -20,12 +28,28 @@ To produce the output, compile the plugin with the package manager (e.g., `cargo
 
 
 
+== How to use?
+
+With the plugin in place, prefix the search query with `{prefix_query}` to activate the plugin.
+The plugin has a certain format to follow to do its thing.
+
+[source]
+----
+! ${BANG} ${SEARCH_QUERY}...
+----
+
+* The first argument is the bang query to be searched in the bangs database.
+* The search query is the rest of the argument, it doesn't affect the search of the database.
+
+
+
+
 == Issues
 
 * Performance is not great.
 It is especially notable as you type quickly.
 
-* Inconsistent search results (e.g., `! aw hello` versus `! aw hello there`).
+* Inconsistent search results (e.g., `{prefix_query} aw hello` versus `{prefix_query} aw hello there`).
 It should stay the same.
 
 
@@ -35,6 +59,7 @@ It should stay the same.
 
 * [ ] Improve performance, pls.
 Maybe, cache the results.
+footnote:[I need to learn how to profile programs *properly*.]
 
 * [ ] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
 

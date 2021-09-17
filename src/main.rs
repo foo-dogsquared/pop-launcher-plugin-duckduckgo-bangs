@@ -1,10 +1,10 @@
 mod config;
 mod utils;
 
-use std::io;
 use std::collections::HashMap;
+use std::io;
 
-use pop_launcher::{Request, PluginResponse, PluginSearchResult};
+use pop_launcher::{PluginResponse, PluginSearchResult, Request};
 use urlencoding::encode;
 
 static PLUGIN_PREFIX: &str = "!";
@@ -89,10 +89,13 @@ impl App {
                             name: bang.name(),
                             description: bang.description(),
                             ..Default::default()
-                        })
+                        }),
                     );
 
-                    self.queries.insert(id as u32, bang.url.clone().replace(BANGS_PLACEHOLDER, &encoded_query));
+                    self.queries.insert(
+                        id as u32,
+                        bang.url.clone().replace(BANGS_PLACEHOLDER, &encoded_query),
+                    );
                 }
             }
         }
