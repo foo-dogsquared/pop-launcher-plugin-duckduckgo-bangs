@@ -38,8 +38,27 @@ The plugin has a certain format to follow to do its thing.
 ! ${BANG} ${SEARCH_QUERY}...
 ----
 
-* The first argument is the bang query to be searched in the bangs database.
+* The first argument is the bang query which is a comma-delimited list of bangs to be searched.
+The plugin will give search results based from the last bang from the query.
+
 * The search query is the rest of the argument, it doesn't affect the search of the database.
+
+Here's some examples of the plugin in use.
+
+[source]
+----
+# Search in Arch Wiki
+! aw hello there
+
+# Search in Arch Wiki and Duckduckgo
+! aw,ddg hello world
+----
+
+This plugin should have the following list of features:
+
+* Upon activation, the plugin will open each of the URL and close.
+* The plugin has a tab completion which will add the selected bang into the bang query.
+
 
 
 

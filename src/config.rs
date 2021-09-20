@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::iter::Iterator;
 use std::path::PathBuf;
 
 use pop_launcher::plugin_paths;
@@ -5,7 +7,7 @@ use serde::Deserialize;
 
 /// The bangs database.
 /// It's based from how [Duckduckgo's own database](https://duckduckgo.com/bang.js) is structured.
-pub type Database = Vec<Bang>;
+pub type Database = HashMap<String, Bang>;
 
 #[derive(Debug, Deserialize)]
 pub struct Bang {
@@ -71,14 +73,16 @@ pub fn load() -> Database {
         };
 
         match serde_json::from_str::<Vec<Bang>>(&string) {
-            Ok(mut config) => db.append(&mut config),
+            Ok(config) => {
+                for bang in config {
+                    db.insert(bang.trigger.clone(), bang);
+                }
+
+                ()
+            }
             Err(why) => eprintln!("failed to deserialize config: {}", why),
         }
     }
-
-    // Sorting then deduplicating it removes the redundant bangs.
-    db.sort_by_cached_key(|bang| bang.trigger.clone());
-    db.dedup_by_key(|bang| bang.trigger.clone());
 
     db
 }

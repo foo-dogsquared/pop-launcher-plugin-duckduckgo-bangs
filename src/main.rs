@@ -2,6 +2,8 @@ mod config;
 mod utils;
 
 use std::collections::HashMap;
+use std::convert::From;
+use std::fmt::{self, Display};
 use std::io;
 
 use pop_launcher::{PluginResponse, PluginSearchResult, Request};
@@ -20,6 +22,7 @@ fn main() {
             Ok(request) => match request {
                 Request::Activate(id) => app.activate(id),
                 Request::Search(query) => app.search(query),
+                Request::Complete(id) => app.complete(id),
                 Request::Exit => break,
                 _ => (),
             },
@@ -32,8 +35,12 @@ struct App {
     /// Contains the bangs database.
     db: config::Database,
 
-    /// Contains formatted queries from the search results.
-    queries: HashMap<u32, String>,
+    /// Metadata relating to the user input.
+    search: BangsQuery,
+
+    /// The search result.
+    /// The string is assumed to be the trigger word of one of the bangs from the database.
+    results: HashMap<u32, String>,
 
     /// The standard output stream.
     out: io::Stdout,
@@ -43,45 +50,46 @@ impl Default for App {
     fn default() -> Self {
         Self {
             db: config::load(),
-            queries: HashMap::new(),
             out: io::stdout(),
+            search: BangsQuery::default(),
+            results: HashMap::new(),
         }
     }
 }
 
 impl App {
-    /// Opens the selected item.
+    /// Opens the selected bangs and its URL.
     /// Upon activation, it also closes the launcher.
-    fn activate(&mut self, id: u32) {
-        if let Some(query) = self.queries.get(&id) {
-            eprintln!("got query: {}", query);
-            utils::xdg_open(query);
+    fn activate(&mut self, _id: u32) {
+        let encoded_query = encode(&self.search.query);
+        for bang_trigger in &self.search.bangs {
+            if let Some(bang) = self.db.get(bang_trigger) {
+                let url = bang.url.clone().replace(BANGS_PLACEHOLDER, &encoded_query);
+                utils::xdg_open(url);
+            }
         }
-
         utils::send(&mut self.out, PluginResponse::Close);
     }
 
     /// Searches the bangs database with the given query.
     /// The search results are then sent out as a plugin response and stored as one of the queries.
     fn search(&mut self, query: String) {
-        // Since it is assumed to be given a new search query each time, we want to refresh the
-        // results.
-        self.queries.clear();
-
         // Only proceed if the search query is prefixed with a certain character.
         if let Some(search) = query.strip_prefix(PLUGIN_PREFIX) {
-            // Append the bangs item to the launcher if the user prefixed the query with a certain
-            // character.
-            let mut search = search.split_whitespace();
+            // Refresh the list.
+            self.results.clear();
 
-            let bang_query = search.next().unwrap_or("");
-            let search_query = search.collect::<Vec<&str>>().join(" ");
-            let encoded_query = encode(&search_query);
-            eprintln!("{}", bang_query);
+            // Set the search metadata right after the plugin is enabled.
+            // This is just to make input processing easier.
+            self.search = BangsQuery::from(search.to_string());
+            let last_bang = self.search.bangs.last().unwrap_or(&"".to_string()).clone();
 
+            // TODO: Improve the performance of this function, pls.
+            //       This is just too slow.
             // The main event of this function.
-            for (id, bang) in self.db.iter().enumerate() {
-                if bang.format().contains(&bang_query) {
+            let mut id = 0;
+            for (_key, bang) in &self.db {
+                if bang.format().contains(&last_bang) {
                     utils::send(
                         &mut self.out,
                         PluginResponse::Append(PluginSearchResult {
@@ -91,15 +99,70 @@ impl App {
                             ..Default::default()
                         }),
                     );
-
-                    self.queries.insert(
-                        id as u32,
-                        bang.url.clone().replace(BANGS_PLACEHOLDER, &encoded_query),
-                    );
+                    self.results.insert(id, bang.trigger.clone());
                 }
+                id += 1;
             }
         }
 
         utils::send(&mut self.out, PluginResponse::Finished);
+    }
+
+    /// Provide the completion with the selected item.
+    /// In this case, it should respond with the trigger word of the entry.
+    fn complete(&mut self, id: u32) {
+        // If the given ID is valid from the search results.
+        if let Some(trigger) = self.results.get(&id) {
+            // If the associated trigger is in the database.
+            if let Some(bang) = self.db.get(trigger) {
+                // For the best user experience, we just delete the last element first and update the query.
+                self.search.bangs.pop();
+                self.search.bangs.push(bang.trigger.clone());
+                utils::send(&mut self.out, PluginResponse::Fill(self.search.to_string()));
+            }
+        }
+    }
+}
+
+/// Contains the data for the user input.
+/// Since the plugin requires the search query in a certain format, this makes it easier to handle.
+#[derive(Debug, Default)]
+struct BangsQuery {
+    /// An array of triggers to be opened.
+    /// This came from user input as a comma-separated list of triggers (e.g., `g,ddg,yt`).
+    bangs: Vec<String>,
+
+    /// The search query.
+    /// This is assumed it came from the user input.
+    query: String,
+}
+
+impl Display for BangsQuery {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {} {}",
+            PLUGIN_PREFIX,
+            self.bangs.join(","),
+            self.query
+        )
+    }
+}
+
+impl From<String> for BangsQuery {
+    fn from(s: String) -> Self {
+        let mut s = s.split_whitespace();
+        let bangs: Vec<String> = s
+            .next()
+            .unwrap_or("")
+            .split(',')
+            .map(|b| b.to_string())
+            .collect();
+        let query = s.collect::<Vec<&str>>().join(" ");
+
+        Self {
+            bangs,
+            query,
+        }
     }
 }
