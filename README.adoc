@@ -23,7 +23,14 @@ You need the following dependencies installed.
 * GNU Make
 * If you have link:http://nixos.org/[Nix package manager] installed, you can simply invoke `nix-shell` and you're done setting up the development environment!
 
-To produce the output, compile the plugin with the package manager (e.g., `cargo build`) and move the binary and `src/plugin.ron` (since Pop launcher needs it to recognize it as one of the plugins) to one of the launcher plugin paths (e.g., `$HOME/.local/share/pop-launcher/plugins/${PLUGIN}`).
+All of the following steps to install are automated with `make install`.
+Just be sure to read it to make sure.
+
+* Compile the plugin with the package manager (e.g., `cargo build`) and move the binary to one of the launcher plugin paths (e.g., `$HOME/.local/share/pop-launcher/plugins/${PLUGIN}`).
+
+* Move `src/plugin.ron` since Pop launcher needs it to recognize it as one of the plugins in the same plugin directory as the binary.
+
+* You also need to download the bangs database, preferably from Duckduckgo and put it under the `bangs` plugin folder with the filename `db.json`.
 
 
 
