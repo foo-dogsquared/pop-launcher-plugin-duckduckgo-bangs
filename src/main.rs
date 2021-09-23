@@ -11,6 +11,7 @@ use urlencoding::encode;
 
 static PLUGIN_PREFIX: &str = "!";
 static BANGS_PLACEHOLDER: &str = "{{{s}}}";
+static BANG_INDICATOR: &str = "!";
 
 fn main() {
     let mut app = App::default();
@@ -35,6 +36,9 @@ struct App {
     /// Contains the bangs database.
     db: config::Database,
 
+    /// The cache for the items to be searched.
+    cache: Vec<(String, String)>,
+
     /// Metadata relating to the user input.
     search: BangsQuery,
 
@@ -48,8 +52,15 @@ struct App {
 
 impl Default for App {
     fn default() -> Self {
+        let db = config::load();
+        let mut cache = Vec::new();
+
+        db.iter()
+            .for_each(|(_k, bang)| cache.push((bang.trigger.clone(), bang.format())));
+
         Self {
-            db: config::load(),
+            db,
+            cache,
             out: io::stdout(),
             search: BangsQuery::default(),
             results: HashMap::new(),
@@ -61,7 +72,8 @@ impl App {
     /// Opens the selected bangs and its URL.
     /// Upon activation, it also closes the launcher.
     fn activate(&mut self, _id: u32) {
-        let encoded_query = encode(&self.search.query);
+        let query = self.search.query.join(" ");
+        let encoded_query = encode(&query);
         for bang_trigger in &self.search.bangs {
             if let Some(bang) = self.db.get(bang_trigger) {
                 let url = bang.url.clone().replace(BANGS_PLACEHOLDER, &encoded_query);
@@ -82,14 +94,22 @@ impl App {
             // Set the search metadata right after the plugin is enabled.
             // This is just to make input processing easier.
             self.search = BangsQuery::from(search.to_string());
-            let last_bang = self.search.bangs.last().unwrap_or(&"".to_string()).clone();
+
+            // We're just going to base our search from the last bang since it is the most
+            // practical way to do so.
+            // We'll figure how to make it smarter by giving responses to recent edits later.
+            let query = self.get_query();
 
             // TODO: Improve the performance of this function, pls.
             //       This is just too slow.
             // The main event of this function.
             let mut id = 0;
-            for (_key, bang) in &self.db {
-                if bang.format().contains(&last_bang) {
+            for (trigger, item) in &self.cache {
+                if !item.contains(&query) {
+                    continue;
+                }
+
+                if let Some(bang) = self.db.get(trigger) {
                     utils::send(
                         &mut self.out,
                         PluginResponse::Append(PluginSearchResult {
@@ -100,8 +120,8 @@ impl App {
                         }),
                     );
                     self.results.insert(id, bang.trigger.clone());
+                    id += 1;
                 }
-                id += 1;
             }
         }
 
@@ -116,11 +136,35 @@ impl App {
             // If the associated trigger is in the database.
             if let Some(bang) = self.db.get(trigger) {
                 // For the best user experience, we just delete the last element first and update the query.
+                match self.has_query_bang_search() {
+                    true => self.search.query.pop(),
+                    _ => None,
+                };
+
                 self.search.bangs.pop();
                 self.search.bangs.push(bang.trigger.clone());
                 utils::send(&mut self.out, PluginResponse::Fill(self.search.to_string()));
             }
         }
+    }
+
+    /// Get the search query to be based.
+    fn get_query(&self) -> String {
+        let ss = String::new();
+        let s = self.search.query.last().unwrap_or(&ss);
+
+        match s.strip_prefix(BANG_INDICATOR) {
+            Some(q) => q.to_string().clone(),
+            None => self.search.bangs.last().unwrap_or(&ss).clone(),
+        }
+    }
+
+    fn has_query_bang_search(&self) -> bool {
+        self.search
+            .query
+            .last()
+            .unwrap_or(&String::new())
+            .starts_with(BANG_INDICATOR)
     }
 }
 
@@ -134,7 +178,7 @@ struct BangsQuery {
 
     /// The search query.
     /// This is assumed it came from the user input.
-    query: String,
+    query: Vec<String>,
 }
 
 impl Display for BangsQuery {
@@ -144,7 +188,7 @@ impl Display for BangsQuery {
             "{} {} {}",
             PLUGIN_PREFIX,
             self.bangs.join(","),
-            self.query
+            self.query.join(" "),
         )
     }
 }
@@ -152,17 +196,14 @@ impl Display for BangsQuery {
 impl From<String> for BangsQuery {
     fn from(s: String) -> Self {
         let mut s = s.split_whitespace();
-        let bangs: Vec<String> = s
+        let bangs = s
             .next()
             .unwrap_or("")
             .split(',')
             .map(|b| b.to_string())
             .collect();
-        let query = s.collect::<Vec<&str>>().join(" ");
+        let query = s.map(|q| q.to_string()).collect();
 
-        Self {
-            bangs,
-            query,
-        }
+        Self { bangs, query }
     }
 }

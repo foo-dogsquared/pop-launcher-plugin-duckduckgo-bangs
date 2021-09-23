@@ -2,6 +2,7 @@
 :toc:
 
 :prefix_query: !
+:bangs_search_query_prefix: !
 
 A link:https://github.com/pop-os/launcher[Pop launcher plugin] that provides a quick searching interface with link:https://duckduckgo.com/bang[Duckduckgo bangs].
 
@@ -19,7 +20,7 @@ Though, I'll maintain this project for a bit (before becoming inactive again ;p)
 
 You need the following dependencies installed.
 
-* link:https://www.rust-lang.org/[Rust compiler]
+* link:https://www.rust-lang.org/[Rust compiler] with the complete toolchain (e.g., Cargo, rustfmt, rust-analyzer)
 * GNU Make
 * If you have link:http://nixos.org/[Nix package manager] installed, you can simply invoke `nix-shell` and you're done setting up the development environment!
 
@@ -49,6 +50,9 @@ The plugin has a certain format to follow to do its thing.
 The plugin will give search results based from the last bang from the query.
 
 * The search query is the rest of the argument, it doesn't affect the search of the database.
++
+You can also search bangs within the search query by prepending it with `{bangs_search_query_prefix}`.
+It is only valid if it's the last part of the search query.
 
 Here's some examples of the plugin in use.
 
@@ -64,7 +68,7 @@ Here's some examples of the plugin in use.
 This plugin should have the following list of features:
 
 * Upon activation, the plugin will open each of the URL and close.
-* The plugin has a tab completion which will add the selected bang into the bang query.
+* The plugin has a tab completion which will replace the latest bang with the selected bang into the bang query.
 
 
 
@@ -77,6 +81,22 @@ It is especially notable as you type quickly.
 
 * Inconsistent search results (e.g., `{prefix_query} aw hello` versus `{prefix_query} aw hello there`).
 It should stay the same.
+
+
+
+
+== Frequently asked questions
+
+[qanda]
+What is the difference from the built-in web plugin?::
+Among other things, this plugin can search multiple pages with one query and takes advantages of Duckduckgo's massive list of them which you can customize it if you want to.
+If you think about it, not much.
+Both plugins are just getting a list of web search engines from a database, attaching your input to their respective URLs, and opening them with `xdg-open`.
+In fact, much of this plugin's source code is based from the web plugin (in other words, it's more like a fork than something else).
+
+Is there a configuration file?::
+The configuration file is just Duckduckgo's bangs database placed in `$POP_PLUGIN_PATH/bangs/db.json`.
+You can customize it if you want to, add or remove some bangs if you're impatient for the submission process (like me).
 
 
 
