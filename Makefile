@@ -1,16 +1,20 @@
 BANGS_DB_URL = https://duckduckgo.com/bang.js
 LAUNCHER_PATH = $(HOME)/.local/share/pop-launcher
 PLUGIN_DIR = $(LAUNCHER_PATH)/plugins
+PROFILE = "debug"
 
-PHONY := build clean install uninstall
+PHONY := build test clean install uninstall
 
-build:
-	cargo build
+build: test
+	cargo build -Z unstable-options --profile $(PROFILE)
+
+test:
+	cargo fmt -- --check && cargo clippy -- -Dwarnings
 
 clean:
 	cargo clean
 
-install:
+install: build
 	mkdir -p ${PLUGIN_DIR}/bangs
 	install -Dm0644 src/plugin.ron ${PLUGIN_DIR}/bangs/plugin.ron
 	ln -sf $(realpath target/debug/pop-shell-launcher-bangs) ${PLUGIN_DIR}/bangs/bangs

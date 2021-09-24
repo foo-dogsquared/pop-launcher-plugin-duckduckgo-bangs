@@ -77,8 +77,6 @@ pub fn load() -> Database {
                 for bang in config {
                     db.insert(bang.trigger.clone(), bang);
                 }
-
-                ()
             }
             Err(why) => eprintln!("failed to deserialize config: {}", why),
         }

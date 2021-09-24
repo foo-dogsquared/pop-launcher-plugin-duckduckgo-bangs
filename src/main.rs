@@ -9,8 +9,13 @@ use std::io;
 use pop_launcher::{PluginResponse, PluginSearchResult, Request};
 use urlencoding::encode;
 
+/// The prefix for activating the plugin.
 static PLUGIN_PREFIX: &str = "!";
+
+/// The placeholder string for the search query.
 static BANGS_PLACEHOLDER: &str = "{{{s}}}";
+
+/// The prefix for indicating an inline bang search.
 static BANG_INDICATOR: &str = "!";
 
 fn main() {
@@ -36,13 +41,15 @@ struct App {
     /// Contains the bangs database.
     db: config::Database,
 
-    /// The cache for the items to be searched.
+    /// The cache for the items generated from the database.
+    /// This is where search operations should go.
+    /// Ideally, this should be updated along with the database that will then generate the cache.
     cache: Vec<(String, String)>,
 
     /// Metadata relating to the user input.
     search: BangsQuery,
 
-    /// The search result.
+    /// The search result where it holds the ID returned from Pop launcher.
     /// The string is assumed to be the trigger word of one of the bangs from the database.
     results: HashMap<u32, String>,
 
@@ -55,6 +62,7 @@ impl Default for App {
         let db = config::load();
         let mut cache = Vec::new();
 
+        // Generating the cache from the database.
         db.iter()
             .for_each(|(_k, bang)| cache.push((bang.trigger.clone(), bang.format())));
 
@@ -154,7 +162,7 @@ impl App {
         let s = self.search.query.last().unwrap_or(&ss);
 
         match s.strip_prefix(BANG_INDICATOR) {
-            Some(q) => q.to_string().clone(),
+            Some(q) => q.to_string(),
             None => self.search.bangs.last().unwrap_or(&ss).clone(),
         }
     }
