@@ -11,6 +11,8 @@ A link:https://github.com/pop-os/launcher[Pop launcher plugin] that provides a q
 Beware, spaghetti code is ahead.
 I just wanted a reason to use Rust and explore a little bit about the renewed Pop launcher.
 Though, I'll maintain this project for a bit (before becoming inactive again ;p).
+
+It is also a young project so expect some instability and sudden changes.
 ====
 
 
@@ -20,7 +22,7 @@ Though, I'll maintain this project for a bit (before becoming inactive again ;p)
 
 You need the following dependencies installed.
 
-* link:https://www.rust-lang.org/[Rust compiler] with the complete toolchain (e.g., Cargo, rustfmt, rust-analyzer)
+* link:https://www.rust-lang.org/[Rust compiler] with the complete toolchain (e.g., Cargo, clippy, rustfmt, rust-analyzer)
 * GNU Make
 * If you have link:http://nixos.org/[Nix package manager] installed, you can simply invoke `nix-shell` and you're done setting up the development environment!
 
@@ -37,6 +39,11 @@ Just be sure to read it to make sure.
 
 
 == How to use?
+
+They say a picture is a thousand words which means a thousand pictures that simulates movement must be equal to hundred thousand words.
+Here's a video demo of using the plugin.
+
+video::./docs/assets/demo.mp4[width=600px]
 
 With the plugin in place, prefix the search query with `{prefix_query}` to activate the plugin.
 The plugin has a certain format to follow to do its thing.
@@ -56,13 +63,29 @@ It is only valid if it's the last part of the search query.
 
 Here's some examples of the plugin in use.
 
+Here's how to search in Arch Wiki...
+
 [source]
 ----
-# Search in Arch Wiki
 ! aw hello there
+----
 
-# Search in Arch Wiki and Duckduckgo
-! aw,ddg hello world
+And here's how to open multiple pages at a time.
+Let's say we want to search in multiple wiki pages such as the Arch Wiki, Gentoo Wiki, and Duckduckgo just in case we want a generic search result.
+Take note this should also give search results in our latest bang (`ddg`) from the bang query.
+
+[source]
+----
+! aw,gw,ddg hello world
+----
+
+Next, we can also search for a bang in the middle of the query with an inline bang query.
+This should list the results based from `!yt` instead of the latest bang (ddg) from the bang query.
+Though, this only happens when the latest word from the search query is an inline bang query.
+
+[source]
+----
+! aw,ddg hello !yt
 ----
 
 This plugin should have the following list of features:
@@ -89,7 +112,7 @@ It should stay the same.
 
 [qanda]
 What is the difference from the built-in web plugin?::
-Among other things, this plugin can search multiple pages with one query and takes advantages of Duckduckgo's massive list of them which you can customize it if you want to.
+Among other things, this plugin can search multiple pages with one query and takes advantages of link:https://duckduckgo.com/bang[Duckduckgo's massive list of them] which you can customize it if you want to.
 If you think about it, not much.
 Both plugins are just getting a list of web search engines from a database, attaching your input to their respective URLs, and opening them with `xdg-open`.
 In fact, much of this plugin's source code is based from the web plugin (in other words, it's more like a fork than something else).
@@ -98,16 +121,37 @@ Is there a configuration file?::
 The configuration file is just Duckduckgo's bangs database placed in `$POP_PLUGIN_PATH/bangs/db.json`.
 You can customize it if you want to, add or remove some bangs if you're impatient for the submission process (like me).
 
+Why this project exists?::
+As an excuse to write something in Rust along with the perfect timing of Pop launcher being rewritten in it.
+As for whether this project is useful or not, that's on you.
+To be honest, I rarely use this plugin myself but it is handy on certain situations such as searching within similar topics (e.g., `! da,ao3,pixiv,twit ART`, `! gh,glab CODE`, `! rgate,arx,hal RESEARCH_TOPIC`).
+It'll be more useful once this project continues to be develop which you can freely contribute if you're bored of waiting. ;p
+
 
 
 
 == TODO
 
-* [ ] Improve performance, pls.
+* [x] Improve performance, pls.
 Maybe, cache the results.
 footnote:[I need to learn how to profile programs *properly*.]
 
+* [ ] Make a consistent interface similar to the built-in plugins.
+The way how a user can interact with the plugin is slightly different compared to them — e.g., you have to press 'Enter' to open the URLs instead of adding them.
+If possible, it should be moved into some other keybindings to finalize and open the query.
+footnote:[Seems like the `ActivateContext` object can make it possible.]
+
 * [ ] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
+Right now, it is a part of the installation process but it isn't done by the resulting binary so we're halfway there?
+
+* [ ] Create a pre-compiled release of the plugin.
+
+* [ ] Improve the quality of the search results (e.g., search with `google` should return the `g` first, same with `duckduckgo` should return `ddg` first).
+We can make use of the `r` key from the bangs database.
+footnote:[And also a good excuse to study how searching works and create a search engine, maybe(?).]
+
+* [ ] Improve the documentation.
+Pretty pictures, setting up development environment, and everything.
 
 
 
