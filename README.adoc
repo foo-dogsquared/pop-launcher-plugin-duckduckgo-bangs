@@ -144,7 +144,7 @@ footnote:[Seems like the `ActivateContext` object can make it possible.]
 * [ ] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
 Right now, it is a part of the installation process but it isn't done by the resulting binary so we're halfway there?
 
-* [ ] Create a pre-compiled release of the plugin.
+* [x] Create a pre-compiled release of the plugin.
 
 * [ ] Improve the quality of the search results (e.g., search with `google` should return the `g` first, same with `duckduckgo` should return `ddg` first).
 We can make use of the `r` key from the bangs database.

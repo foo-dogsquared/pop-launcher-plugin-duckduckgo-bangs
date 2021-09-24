@@ -1,0 +1,33 @@
+name: Build pre-release plugin
+on:
+  push:
+    branches:
+      - master
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build plugin
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+      - name: Create pre-release
+        uses: marvinpinto/action-automatic-releases@v1.2.1
+        with:
+          prerelease: true
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          title: "Pre-release build"
+          files: |
+            target/release/pop-shell-launcher-bangs
+            src/plugin.ron
+            LICENSE
+            README.adoc
+
