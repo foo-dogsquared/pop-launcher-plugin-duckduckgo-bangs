@@ -40,10 +40,18 @@ Just be sure to read it to make sure.
 
 == How to use?
 
-They say a picture is a thousand words which means a thousand pictures that simulates movement must be equal to hundred thousand words.
-Here's a video demo of using the plugin.
+They say a picture is a thousand words so here's a screenshot of the plugin in the Pop shell launcher frontend.
+
+image:./docs/assets/demo.png[A screenshot of the plugin in Pop shell launcher frontend]
+
+However, a thousand pictures that simulates movement must be equal to hundred thousand words, yes?
+So here's a video demo of using the plugin.
 
 video::./docs/assets/demo.mp4[width=600px]
+
+I believe that already explains what's the plugin is about.
+Feel free to skip at this point.
+But if you want text, you may continue.
 
 With the plugin in place, prefix the search query with `{prefix_query}` to activate the plugin.
 The plugin has a certain format to follow to do its thing.
@@ -96,6 +104,24 @@ This plugin should have the following list of features:
 
 
 
+== Setting up for development
+
+This project is pretty much just someone's pet project looking for a reason to write Rust.
+Nonetheless, a project guideline is a good thing.
+
+* Follow the stable channel of Rust compiler.
+
+* Use the rest of Rust toolchain such as clippy and rustfmt before making a contribution.
+`rust-analyzer` is optional (but recommended).
+
+* If you have Nix installed, you should use the stable version of nixpkgs.
+If you use unstable version of Nix, you should use the flakes feature.
+
+* Use link:https://asciidoctor.org/[Asciidoctor]-flavored Asciidoc as the preferred text formatting language.
+footnote:[Seriously, it's pretty nice. :)]
+
+
+
 
 == Issues
 
@@ -136,11 +162,6 @@ It'll be more useful once this project continues to be develop which you can fre
 Maybe, cache the results.
 footnote:[I need to learn how to profile programs *properly*.]
 
-* [ ] Make a consistent interface similar to the built-in plugins.
-The way how a user can interact with the plugin is slightly different compared to them — e.g., you have to press 'Enter' to open the URLs instead of adding them.
-If possible, it should be moved into some other keybindings to finalize and open the query.
-footnote:[Seems like the `ActivateContext` object can make it possible.]
-
 * [ ] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
 Right now, it is a part of the installation process but it isn't done by the resulting binary so we're halfway there?
 
@@ -152,6 +173,18 @@ footnote:[And also a good excuse to study how searching works and create a searc
 
 * [ ] Improve the documentation.
 Pretty pictures, setting up development environment, and everything.
+
+
+
+
+== Future considerations
+
+* Remove the database merging from different plugin paths.
+
+* Make a consistent interface similar to the built-in plugins.
+The way how a user can interact with the plugin is slightly different compared to them — e.g., you have to press 'Enter' to open the URLs instead of adding them.
+If possible, it should be moved into some other keybindings to finalize and open the query.
+footnote:[Seems like the `ActivateContext` object can make it possible.]
 
 
 

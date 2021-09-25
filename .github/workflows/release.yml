@@ -1,33 +1,44 @@
-name: Build pre-release plugin
+name: Build tagged release
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "v*"
 jobs:
   build:
     strategy:
       matrix:
         # Computer architectures that we'll support.
+        # See the list of supported platforms at the rustc book.
+        # https://doc.rust-lang.org/stable/rustc/platform-support.html
         arch:
           - aarch64-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: "${{ matrix.arch }}"
+
       - name: Build plugin
         uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
           args: --target "${{ matrix.arch }}" --release
+
       - name: Create archive
-        run: tar caf "pop-launcher-plugin-bangs-${{ matrix.arch }}.tar.gz" LICENSE README.adoc -C ./src plugin.ron -C "../target/${{ matrix.arch }}/release" bangs
+        run: |
+          tar caf "pop-launcher-plugin-bangs-${{ matrix.arch }}.tar.gz" \
+                                                                       LICENSE README.adoc docs/ \
+                                                                       -C ./src plugin.ron \
+                                                                       -C "../target/${{ matrix.arch }}/release" bangs
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -38,18 +49,16 @@ jobs:
   # https://github.com/marvinpinto/actions/issues/177
   #
   # Please track that issue sometimes in case you're still dissatisfied in the future.
-  pre-release:
+  release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Downloading artifacts
         uses: actions/download-artifact@v2
 
-      - name: Create pre-release
+      - name: Create release
         uses: marvinpinto/action-automatic-releases@v1.2.1
         with:
-          prerelease: true
+          prerelease: false
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          title: "Pre-release build"
           files: "**/pop-launcher-plugin-bangs-*.tar.gz"

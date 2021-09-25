@@ -6,9 +6,9 @@
     defaultPackage.x86_64-linux =
       with import nixpkgs { system = "x86_64-linux"; };
       rustPlatform.buildRustPackage {
-        name = "pop-shell-launcher-bangs";
+        name = "pop-launcher-plugin-bangs";
         src = self;
-        cargoSha256 = lib.fakeSha256;
+        cargoSha256 = "sha256-achaZ7QE7cHpXZ2lzt3G5Ja3PnKGqj+t9up/q3FeHxc=";
       };
   };
 }
