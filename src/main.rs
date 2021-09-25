@@ -9,6 +9,7 @@ use std::io;
 use pop_launcher::{PluginResponse, PluginSearchResult, Request};
 use urlencoding::encode;
 
+// In any case, we can also move the following static variables into a plugin-specific configuration file.
 /// The prefix for activating the plugin.
 static PLUGIN_PREFIX: &str = "!";
 
@@ -17,6 +18,9 @@ static BANGS_PLACEHOLDER: &str = "{{{s}}}";
 
 /// The prefix for indicating an inline bang search.
 static BANG_INDICATOR: &str = "!";
+
+/// Indicates how many search items will be returned.
+static SEARCH_RESULT_LIMIT: u32 = 8;
 
 fn main() {
     let mut app = App::default();
@@ -63,8 +67,14 @@ impl Default for App {
         let mut cache = Vec::new();
 
         // Generating the cache from the database.
-        db.iter()
-            .for_each(|(_k, bang)| cache.push((bang.trigger.clone(), bang.format())));
+        db.iter().for_each(|(_k, bang)| {
+            cache.push((bang.trigger.clone(), bang.format().to_lowercase()))
+        });
+
+        // Sorting the database from biggest to smallest relevance.
+        // We also do it once rather than sorting the search results can save some cycles
+        // unless it has returned inferior results.
+        cache.sort_by_key(|(trigger, _format)| 0 - db[trigger].relevance as i64);
 
         Self {
             db,
@@ -96,9 +106,6 @@ impl App {
     fn search(&mut self, query: String) {
         // Only proceed if the search query is prefixed with a certain character.
         if let Some(search) = query.strip_prefix(PLUGIN_PREFIX) {
-            // Refresh the list.
-            self.results.clear();
-
             // Set the search metadata right after the plugin is enabled.
             // This is just to make input processing easier.
             self.search = BangsQuery::from(search.to_string());
@@ -106,20 +113,24 @@ impl App {
             // We're just going to base our search from the last bang since it is the most
             // practical way to do so.
             // We'll figure how to make it smarter by giving responses to recent edits later.
-            let query = self.get_query();
+            let query = self.get_query().to_lowercase();
 
-            // TODO: Improve the performance of this function, pls.
-            //       This is just too slow.
-            // The main event of this function.
+            // Making the standard output accessible in the closure of the following block.
+            let mut out = &self.out;
+
+            // Getting a new hashmap for the results.
+            // Until we can find an elegant way to just use the original map, this will do for now.
+            let mut results = HashMap::new();
             let mut id = 0;
-            for (trigger, item) in &self.cache {
-                if !item.contains(&query) {
-                    continue;
-                }
 
-                if let Some(bang) = self.db.get(trigger) {
+            self.cache
+                .iter()
+                .filter(|(_trigger, item)| item.contains(&query))
+                .filter_map(|(trigger, _item)| self.db.get(trigger))
+                .take(SEARCH_RESULT_LIMIT as usize)
+                .for_each(|bang| {
                     utils::send(
-                        &mut self.out,
+                        &mut out,
                         PluginResponse::Append(PluginSearchResult {
                             id: id as u32,
                             name: bang.name(),
@@ -127,10 +138,11 @@ impl App {
                             ..Default::default()
                         }),
                     );
-                    self.results.insert(id, bang.trigger.clone());
+
+                    results.insert(id, bang.trigger.clone());
                     id += 1;
-                }
-            }
+                });
+            self.results = results;
         }
 
         utils::send(&mut self.out, PluginResponse::Finished);
