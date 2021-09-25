@@ -58,42 +58,26 @@ The plugin has a certain format to follow to do its thing.
 
 [source]
 ----
-! ${BANG} ${SEARCH_QUERY}...
+! ${SEARCH_QUERY}...
 ----
 
-* The first argument is the bang query which is a comma-delimited list of bangs to be searched.
-The plugin will give search results based from the last bang from the query.
-
-* The search query is the rest of the argument, it doesn't affect the search of the database.
-+
-You can also search bangs within the search query by prepending it with `{bangs_search_query_prefix}`.
-It is only valid if it's the last part of the search query.
-
-Here's some examples of the plugin in use.
+You can search bangs within the search query by prepending it with `{bangs_search_query_prefix}`.
+The plugin will only give search results if a bang is the last part of the search query.
 
 Here's how to search in Arch Wiki...
 
 [source]
 ----
-! aw hello there
+! hello there !aw
 ----
 
-And here's how to open multiple pages at a time.
+The plugin can open several pages too if you have several bangs in the query.
 Let's say we want to search in multiple wiki pages such as the Arch Wiki, Gentoo Wiki, and Duckduckgo just in case we want a generic search result.
-Take note this should also give search results in our latest bang (`ddg`) from the bang query.
+Take note this should also give search results in our latest bang (`gw`) from the bang query.
 
 [source]
 ----
-! aw,gw,ddg hello world
-----
-
-Next, we can also search for a bang in the middle of the query with an inline bang query.
-This should list the results based from `!yt` instead of the latest bang (ddg) from the bang query.
-Though, this only happens when the latest word from the search query is an inline bang query.
-
-[source]
-----
-! aw,ddg hello !yt
+! hello !ddg world !aw !gw
 ----
 
 This plugin should have the following list of features:
@@ -123,17 +107,6 @@ footnote:[Seriously, it's pretty nice. :)]
 
 
 
-== Issues
-
-* Performance is not great.
-It is especially notable as you type quickly.
-
-* Inconsistent search results (e.g., `{prefix_query} aw hello` versus `{prefix_query} aw hello there`).
-It should stay the same.
-
-
-
-
 == Frequently asked questions
 
 [qanda]
@@ -150,7 +123,7 @@ You can customize it if you want to, add or remove some bangs if you're impatien
 Why this project exists?::
 As an excuse to write something in Rust along with the perfect timing of Pop launcher being rewritten in it.
 As for whether this project is useful or not, that's on you.
-To be honest, I rarely use this plugin myself but it is handy on certain situations such as searching within similar topics (e.g., `! da,ao3,pixiv,twit ART`, `! gh,glab CODE`, `! rgate,arx,hal RESEARCH_TOPIC`).
+To be honest, I rarely use this plugin myself but it is handy on certain situations such as searching within similar topics (e.g., `! !da !ao3 !pixiv !twit ART`, `! !gh !glab CODE`, `! !rgate !arx !hal RESEARCH_TOPIC`).
 It'll be more useful once this project continues to be develop which you can freely contribute if you're bored of waiting. ;p
 
 
@@ -167,12 +140,14 @@ Right now, it is a part of the installation process but it isn't done by the res
 
 * [x] Create a pre-compiled release of the plugin.
 
-* [ ] Improve the quality of the search results (e.g., search with `google` should return the `g` first, same with `duckduckgo` should return `ddg` first).
+* [x] Improve the quality of the search results (e.g., search with `google` should return the `g` first, same with `duckduckgo` should return `ddg` first).
 We can make use of the `r` key from the bangs database.
 footnote:[And also a good excuse to study how searching works and create a search engine, maybe(?).]
 
-* [ ] Improve the documentation.
+* [x] Improve the documentation.
 Pretty pictures, setting up development environment, and everything.
+
+* [ ] PRESENT THE ABOMINATION TO THE WORLD!
 
 
 
@@ -185,6 +160,14 @@ Pretty pictures, setting up development environment, and everything.
 The way how a user can interact with the plugin is slightly different compared to them — e.g., you have to press 'Enter' to open the URLs instead of adding them.
 If possible, it should be moved into some other keybindings to finalize and open the query.
 footnote:[Seems like the `ActivateContext` object can make it possible.]
+
+* Plugin-specific configurations.
+For the config file, we could extend it from `plugin.ron` or another file (e.g., `config.json`).
+Future options include...
+
+** The maximum number of results returned which is useful for other frontends.
+** Format for the name and description.
+** Force download of the database file when missing.
 
 
 
