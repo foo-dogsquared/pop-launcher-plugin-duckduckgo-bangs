@@ -47,12 +47,18 @@ Just be sure to read it to make sure.
 
 They say a picture is a thousand words so here's a screenshot of the plugin in the Pop shell launcher frontend.
 
-image:./docs/assets/demo.png[A screenshot of the plugin in Pop shell launcher frontend]
+image:./docs/assets/demo-screenshot.webp[A screenshot of the plugin in Pop shell launcher frontend]
 
 However, a thousand pictures that simulates movement must be equal to hundred thousand words, yes?
 So here's a video demo of using the plugin.
 
+ifdef::env-github+backend-html5[]
+video::./docs/assets/demo.webp[]
+endif::[]
+
+ifndef::env-github[]
 video::./docs/assets/demo.mp4[width=600px]
+endif::[]
 
 I believe that already explains what's the plugin is about.
 Feel free to skip at this point.

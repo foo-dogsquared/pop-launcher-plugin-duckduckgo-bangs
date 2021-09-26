@@ -1,0 +1,21 @@
+= Changelog
+:toc:
+
+All notable changes to this project will be documented in this file.
+
+The format is based on link:https://keepachangelog.com/en/1.0.0/[Keep a Changelog],
+and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Versioning].
+
+
+
+
+== v1.0.0 - 2021-09-26
+
+The initial release.
+
+=== Added
+
+* Limits with a maximum number of search results, bringing the performance up.
+
+* Automatic download of the bangs database from Duckduckgo if the plugin found no database files.
+Though, it needs `curl` as a runtime dependency.
