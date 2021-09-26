@@ -20,11 +20,16 @@ It is also a young project so expect some instability and sudden changes.
 
 == Prerequisites
 
-You need the following dependencies installed.
+You need the following dependencies installed if you want to build it from scratch.
 
 * link:https://www.rust-lang.org/[Rust compiler] with the complete toolchain (e.g., Cargo, clippy, rustfmt, rust-analyzer)
 * GNU Make
 * If you have link:http://nixos.org/[Nix package manager] installed, you can simply invoke `nix-shell` and you're done setting up the development environment!
+
+Once you have built the plugin, you need the following runtime dependencies:
+
+* link:https://curl.se/[curl] for handling automatic downloading of Duckduckgo's bang database when there's no such file.
+* link:https://github.com/pop-os/launcher[Pop launcher], obviously. :)
 
 All of the following steps to install are automated with `make install`.
 Just be sure to read it to make sure.
@@ -119,6 +124,7 @@ In fact, much of this plugin's source code is based from the web plugin (in othe
 Is there a configuration file?::
 The configuration file is just Duckduckgo's bangs database placed in `$POP_PLUGIN_PATH/bangs/db.json`.
 You can customize it if you want to, add or remove some bangs if you're impatient for the submission process (like me).
+You can start by formatting the database file nicely — e.g., `jq . https://duckduckgo.com/bang.js > $POP_PLUGIN_PATH/bangs/db.json` then edit with your text editor of choice.
 
 Why this project exists?::
 As an excuse to write something in Rust along with the perfect timing of Pop launcher being rewritten in it.
@@ -135,7 +141,7 @@ It'll be more useful once this project continues to be develop which you can fre
 Maybe, cache the results.
 footnote:[I need to learn how to profile programs *properly*.]
 
-* [ ] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
+* [x] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
 Right now, it is a part of the installation process but it isn't done by the resulting binary so we're halfway there?
 
 * [x] Create a pre-compiled release of the plugin.
@@ -147,7 +153,9 @@ footnote:[And also a good excuse to study how searching works and create a searc
 * [x] Improve the documentation.
 Pretty pictures, setting up development environment, and everything.
 
-* [ ] PRESENT THE ABOMINATION TO THE WORLD!
+* [x] PRESENT THE ABOMINATION TO THE WORLD!
+
+* [ ] Clean up the messy and smelly codebase like a high-school janitor working on their first day of school.
 
 
 
@@ -168,6 +176,8 @@ Future options include...
 ** The maximum number of results returned which is useful for other frontends.
 ** Format for the name and description.
 ** Force download of the database file when missing.
+
+* Make automatic download opt-in, making it forced from the user configuration instead.
 
 
 
