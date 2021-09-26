@@ -33,11 +33,7 @@ jobs:
           args: --target "${{ matrix.arch }}" --release
 
       - name: Create archive
-        run: |
-          tar caf "pop-launcher-plugin-bangs-${{ matrix.arch }}.tar.gz" \
-                                                                       LICENSE README.adoc docs/ \
-                                                                       -C ./src plugin.ron \
-                                                                       -C "../target/${{ matrix.arch }}/release" bangs
+        run: tar caf "pop-launcher-plugin-bangs-${{ matrix.arch }}.tar.gz" LICENSE README.adoc docs/ -C ./src plugin.ron -C "../target/${{ matrix.arch }}/release" bangs
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
