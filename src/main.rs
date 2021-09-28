@@ -4,6 +4,8 @@ mod utils;
 use std::collections::HashMap;
 use std::io;
 
+use crate::config::AppConfig;
+
 use pop_launcher::{PluginResponse, PluginSearchResult, Request};
 use urlencoding::encode;
 
@@ -16,9 +18,6 @@ static BANGS_PLACEHOLDER: &str = "{{{s}}}";
 
 /// The prefix for indicating an inline bang search.
 static BANG_INDICATOR: &str = "!";
-
-/// Indicates how many search items will be returned.
-static SEARCH_RESULT_LIMIT: u32 = 8;
 
 fn main() {
     let mut app = App::default();
@@ -40,6 +39,9 @@ fn main() {
 }
 
 struct App {
+    /// Plugin-specific configuration.
+    config: AppConfig,
+
     /// Contains the bangs database.
     db: config::Database,
 
@@ -61,7 +63,8 @@ struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let db = config::load();
+        let config = AppConfig::load();
+        let db = config::load(&config);
         let mut cache = Vec::new();
 
         // Generating the cache from the database.
@@ -77,6 +80,7 @@ impl Default for App {
         Self {
             db,
             cache,
+            config,
             out: io::stdout(),
             search: Vec::new(),
             results: HashMap::new(),
@@ -133,7 +137,7 @@ impl App {
                     .iter()
                     .filter(|(_trigger, item)| item.contains(&query))
                     .filter_map(|(trigger, _item)| self.db.get(trigger))
-                    .take(SEARCH_RESULT_LIMIT as usize)
+                    .take(self.config.max_limit as usize)
                     .for_each(|bang| {
                         // This also doubles as a counter.
                         id += 1;

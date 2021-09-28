@@ -6,9 +6,7 @@ use std::process::Command;
 
 use crate::utils::{find, local_plugin_dir};
 
-use serde::Deserialize;
-
-static DEFAULT_BANGS_DATABASE: &str = "https://duckduckgo.com/bang.js";
+use serde::{Deserialize, Serialize};
 
 /// The bangs database.
 /// It's based from how [Duckduckgo's own database](https://duckduckgo.com/bang.js) is structured.
@@ -65,7 +63,7 @@ impl Bang {
 ///
 /// It will also take care of automatically downloading the default database in the local plugin
 /// path if there's no database found in the plugin paths.
-pub fn load() -> Database {
+pub fn load(app_config: &AppConfig) -> Database {
     let mut db = Database::default();
 
     // Finding all `db.json` files and merging the databases together.
@@ -81,11 +79,11 @@ pub fn load() -> Database {
     //
     // We also use `curl` from the command line instead of using an HTTP client because I just want
     // to save some bytes lel.
-    if paths.is_empty() {
+    if paths.is_empty() && app_config.force_download {
         eprintln!("[bangs] no found database files, downloading the default database");
         match Command::new("curl")
             .arg("--silent")
-            .arg(DEFAULT_BANGS_DATABASE)
+            .arg(&app_config.db_url)
             .output()
         {
             Ok(process) => {
@@ -126,4 +124,60 @@ pub fn load() -> Database {
     }
 
     db
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AppConfig {
+    #[serde(default = "AppConfig::default_db")]
+    pub db_url: String,
+
+    #[serde(default = "AppConfig::max_limit")]
+    pub max_limit: u64,
+
+    #[serde(default = "AppConfig::force_download")]
+    pub force_download: bool,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            db_url: Self::default_db(),
+            max_limit: Self::max_limit(),
+            force_download: Self::force_download(),
+        }
+    }
+}
+
+impl AppConfig {
+    /// Loads the plugin configuration if it has one.
+    ///
+    /// Note this will not merge configuration.
+    pub fn load() -> Self {
+        let mut config = Self::default();
+
+        // We'll only take one of them to not let the configuration confusion happen.
+        if let Some(config_file) = find("bangs", "config.json").take(1).next() {
+            if let Ok(content) = std::fs::read_to_string(config_file) {
+                match serde_json::from_str::<Self>(&content) {
+                    Ok(new_config) => config = new_config,
+                    Err(why) => eprintln!("[bangs] failed to read config: {}", why),
+                }
+            }
+        }
+
+        config
+    }
+
+    // The following functions are just used for making the default values.
+    fn default_db() -> String {
+        "https://duckduckgo.com/bang.js".to_string()
+    }
+
+    fn max_limit() -> u64 {
+        8
+    }
+
+    fn force_download() -> bool {
+        true
+    }
 }

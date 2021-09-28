@@ -22,14 +22,16 @@ It is also a young project so expect some instability and sudden changes.
 
 You need the following dependencies installed if you want to build it from scratch.
 
+* link:https://git-scm.com/[Git] (obvs)
 * link:https://www.rust-lang.org/[Rust compiler] with the complete toolchain (e.g., Cargo, clippy, rustfmt, rust-analyzer)
 * GNU Make
 * If you have link:http://nixos.org/[Nix package manager] installed, you can simply invoke `nix-shell` and you're done setting up the development environment!
 
 Once you have built the plugin, you need the following runtime dependencies:
 
-* link:https://curl.se/[curl] for handling automatic downloading of Duckduckgo's bang database when there's no such file.
 * link:https://github.com/pop-os/launcher[Pop launcher], obviously. :)
+* link:https://curl.se/[curl] for handling automatic downloading of Duckduckgo's bang database when there's no such file.
+* `xdg-open` for opening URLs.
 
 All of the following steps to install are automated with `make install`.
 Just be sure to read it to make sure.
@@ -39,6 +41,7 @@ Just be sure to read it to make sure.
 * Move `src/plugin.ron` since Pop launcher needs it to recognize it as one of the plugins in the same plugin directory as the binary.
 
 * You also need to download the bangs database, preferably from Duckduckgo and put it under the `bangs` plugin folder with the filename `db.json`.
+However, this step is not needed as the plugin can automatically download the database into the appropriate location at the home directory.
 
 
 
@@ -97,6 +100,43 @@ This plugin should have the following list of features:
 * The plugin has a tab completion which will replace the latest bang with the selected bang into the bang query.
 
 
+=== Plugin-specific configuration
+
+This plugin has a configuration file it can use to change some of its behaviors.
+The configuration file should be in `$POP_PLUGIN_PATH/bangs/config.json`.
+It is a simple JSON object with the possible keys and their values.
+
+[%header, cols="3*"]
+|===
+| Key
+| Value
+| Default value
+
+| `db_url`
+| A string to the fallback URL for the bangs database.
+| `https://duckduckgo.com/bang.js`
+
+| `max_limit`
+| A number that dictates how many search results should the plugin return at maximum.
+| 8
+
+| `force_download`
+| Indicates whether or not the fallback database should be downloaded if no database has been found.
+| `true`
+|===
+
+This is the equivalent JSON for the default configuration.
+
+[source, json]
+----
+{
+    "db_url": "https://duckduckgo.com/bang.js",
+    "max_limit": 8,
+    "force_download": true
+}
+----
+
+
 
 
 == Setting up for development
@@ -127,8 +167,8 @@ If you think about it, not much.
 Both plugins are just getting a list of web search engines from a database, attaching your input to their respective URLs, and opening them with `xdg-open`.
 In fact, much of this plugin's source code is based from the web plugin (in other words, it's more like a fork than something else).
 
-Is there a configuration file?::
-The configuration file is just Duckduckgo's bangs database placed in `$POP_PLUGIN_PATH/bangs/db.json`.
+Is the database file used by the plugin in the filesystem?::
+The database file is just Duckduckgo's bangs database placed in `$POP_PLUGIN_PATH/bangs/db.json` — e.g., `~/.local/pop-launcher/plugins/bangs/db.json` if you've installed it locally.
 You can customize it if you want to, add or remove some bangs if you're impatient for the submission process (like me).
 You can start by formatting the database file nicely — e.g., `jq . https://duckduckgo.com/bang.js > $POP_PLUGIN_PATH/bangs/db.json` then edit with your text editor of choice.
 
@@ -141,31 +181,6 @@ It'll be more useful once this project continues to be develop which you can fre
 
 
 
-== TODO
-
-* [x] Improve performance, pls.
-Maybe, cache the results.
-footnote:[I need to learn how to profile programs *properly*.]
-
-* [x] Automatic downloading of the bangs database in the home folder when running for the first time (or if there's no bangs database anywhere).
-Right now, it is a part of the installation process but it isn't done by the resulting binary so we're halfway there?
-
-* [x] Create a pre-compiled release of the plugin.
-
-* [x] Improve the quality of the search results (e.g., search with `google` should return the `g` first, same with `duckduckgo` should return `ddg` first).
-We can make use of the `r` key from the bangs database.
-footnote:[And also a good excuse to study how searching works and create a search engine, maybe(?).]
-
-* [x] Improve the documentation.
-Pretty pictures, setting up development environment, and everything.
-
-* [x] PRESENT THE ABOMINATION TO THE WORLD!
-
-* [ ] Clean up the messy and smelly codebase like a high-school janitor working on their first day of school.
-
-
-
-
 == Future considerations
 
 * Remove the database merging from different plugin paths.
@@ -174,16 +189,6 @@ Pretty pictures, setting up development environment, and everything.
 The way how a user can interact with the plugin is slightly different compared to them — e.g., you have to press 'Enter' to open the URLs instead of adding them.
 If possible, it should be moved into some other keybindings to finalize and open the query.
 footnote:[Seems like the `ActivateContext` object can make it possible.]
-
-* Plugin-specific configurations.
-For the config file, we could extend it from `plugin.ron` or another file (e.g., `config.json`).
-Future options include...
-
-** The maximum number of results returned which is useful for other frontends.
-** Format for the name and description.
-** Force download of the database file when missing.
-
-* Make automatic download opt-in, making it forced from the user configuration instead.
 
 
 
