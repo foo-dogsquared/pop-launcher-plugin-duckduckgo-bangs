@@ -24,17 +24,10 @@ You need the following dependencies installed if you want to build it from scrat
 
 * link:https://git-scm.com/[Git] (obvs)
 * link:https://www.rust-lang.org/[Rust compiler] with the complete toolchain (e.g., Cargo, clippy, rustfmt, rust-analyzer)
-* GNU Make
+* GNU Make (optional)
 * If you have link:http://nixos.org/[Nix package manager] installed, you can simply invoke `nix-shell` and you're done setting up the development environment!
 
-Once you have built the plugin, you need the following runtime dependencies:
-
-* link:https://github.com/pop-os/launcher[Pop launcher], obviously. :)
-* link:https://curl.se/[curl] for handling automatic downloading of Duckduckgo's bang database when there's no such file.
-* `xdg-open` for opening URLs.
-
-All of the following steps to install are automated with `make install`.
-Just be sure to read it to make sure.
+Once you have the dependencies for building in place, you have to do the following.
 
 * Compile the plugin with the package manager (e.g., `cargo build`) and move the binary to one of the launcher plugin paths (e.g., `$HOME/.local/share/pop-launcher/plugins/${PLUGIN}`).
 
@@ -42,6 +35,14 @@ Just be sure to read it to make sure.
 
 * You also need to download the bangs database, preferably from Duckduckgo and put it under the `bangs` plugin folder with the filename `db.json`.
 However, this step is not needed as the plugin can automatically download the database into the appropriate location at the home directory.
+
+This is also automated with `make install` if you have GNU Make installed.
+
+Once you have built the plugin, you need the following runtime dependencies:
+
+* link:https://github.com/pop-os/launcher[Pop launcher], obviously. :)
+* link:https://curl.se/[curl] for handling automatic downloading of Duckduckgo's bang database when there's no such file.
+* `xdg-open` for opening URLs.
 
 
 
@@ -55,8 +56,8 @@ image:./docs/assets/demo-screenshot.webp[A screenshot of the plugin in Pop shell
 However, a thousand pictures that simulates movement must be equal to hundred thousand words, yes?
 So here's a video demo of using the plugin.
 
-ifdef::env-github+backend-html5[]
-video::./docs/assets/demo.webp[]
+ifdef::env-github[]
+image::./docs/assets/demo.webp[A demo of using the bangs plugin in Pop shell launcher]
 endif::[]
 
 ifndef::env-github[]
@@ -195,5 +196,5 @@ footnote:[Seems like the `ActivateContext` object can make it possible.]
 
 == Acknowledgements
 
-* Much of the code are copied (READ: stolen) from the https://github.com/pop-os/launcher/tree/master/plugins/src/web[web built-in launcher plugin].
+* Much of the code are copied (READ: stolen) from the https://github.com/pop-os/launcher/tree/master/plugins/src/web[web built-in launcher plugin]. footnote:[This is also why the project is under GPL3.]
 * The link:https://github.com/dhelmr/ulauncher-duckduckgo-bangs[Ulauncher Duckduckgo bangs extension] as one of the inspirations for the interface.

@@ -8,7 +8,7 @@
       rustPlatform.buildRustPackage {
         name = "pop-launcher-plugin-bangs";
         src = self;
-        cargoSha256 = "sha256-achaZ7QE7cHpXZ2lzt3G5Ja3PnKGqj+t9up/q3FeHxc=";
+        cargoSha256 = "sha256-Nxlhz3/eX66M2JTYoSu2BsfkiG3YiNrBnvtcrlZBkKY=";
       };
   };
 }

@@ -7,6 +7,15 @@ The format is based on link:https://keepachangelog.com/en/1.0.0/[Keep a Changelo
 and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 
+== Unreleased
+
+Release date is whenever I maintained or remembered this project exists. ;p
+
+=== Added
+
+* A plugin-specific configuration file.
+
+
 
 
 == v1.0.0 - 2021-09-26

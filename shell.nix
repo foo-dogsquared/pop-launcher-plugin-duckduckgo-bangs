@@ -6,9 +6,10 @@ mkShell {
   buildInputs = [
     gnumake
     glibc
-    clippy
+    clippy # Our favorite linter
+    openssl # Needed for the reqwest library
     rustc
-    rustfmt
-    rust-analyzer
+    rustfmt # Prettifier
+    rust-analyzer # LSP server
   ];
 }
