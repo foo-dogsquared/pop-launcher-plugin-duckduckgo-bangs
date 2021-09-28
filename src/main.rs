@@ -119,6 +119,8 @@ impl App {
                 .unwrap_or(&String::new())
                 .strip_prefix(BANG_INDICATOR)
             {
+                let query = query.to_lowercase();
+
                 // Making the standard output accessible in the closure of the following block.
                 let mut out = &self.out;
 
@@ -129,7 +131,7 @@ impl App {
 
                 self.cache
                     .iter()
-                    .filter(|(_trigger, item)| item.contains(query))
+                    .filter(|(_trigger, item)| item.contains(&query))
                     .filter_map(|(trigger, _item)| self.db.get(trigger))
                     .take(SEARCH_RESULT_LIMIT as usize)
                     .for_each(|bang| {
@@ -153,30 +155,12 @@ impl App {
                 // We'll just reuse the `id` variable for this.
                 // Take note we need to make a launcher item to make activation event possible.
                 if id == 0 {
-                    // We send a launcher item since it is required for the activate event.
-                    utils::send(
-                        &mut self.out,
-                        PluginResponse::Append(PluginSearchResult {
-                            id: 1,
-                            name: "Finish".to_string(),
-                            description: "Launch this item to open all your URLs".to_string(),
-                            ..Default::default()
-                        }),
-                    );
+                    self.send_empty_launcher_item();
                 }
 
                 self.results = results;
             } else {
-                // We send a launcher item since it is required for the activate event.
-                utils::send(
-                    &mut self.out,
-                    PluginResponse::Append(PluginSearchResult {
-                        id: 1,
-                        name: "Finish".to_string(),
-                        description: "Launch this item to open all your URLs".to_string(),
-                        ..Default::default()
-                    }),
-                );
+                self.send_empty_launcher_item();
             }
         }
 
@@ -218,5 +202,17 @@ impl App {
             .map(|q| q.to_string())
             .collect::<Vec<String>>()
             .join(" ")
+    }
+
+    fn send_empty_launcher_item(&mut self) {
+        utils::send(
+            &mut self.out,
+            PluginResponse::Append(PluginSearchResult {
+                id: 1,
+                name: "Finish".to_string(),
+                description: "Launch this item to open all your URLs".to_string(),
+                ..Default::default()
+            }),
+        );
     }
 }
