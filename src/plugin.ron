@@ -5,6 +5,7 @@
         regex: "^(!)+",
         help: "! ",
         isolate: true,
+        no_sort: true,
     ),
     bin: (path: "bangs"),
     icon: Name("system-search")
