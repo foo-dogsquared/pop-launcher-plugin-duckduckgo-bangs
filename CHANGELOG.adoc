@@ -14,6 +14,16 @@ Release date is whenever I maintained or remembered this project exists. ;p
 === Added
 
 * A plugin-specific configuration file.
+** `force_download` (boolean) lets you configure to force download of database file when missing.
+** `max_limit` (number) indicates the maximum number of search results to be returned.
+** `db_url` (string) points to the URL of the default bangs database used together with `force_download`.
+** `default_bangs` (array[string]) is a list of bangs to be used when no bangs are found from the search query; handy for quicker search especially when you're used to searching with your default search engine of choice.
+
+
+=== Fixed
+
+* Return the search results sorted by relevance when in the launcher service.
+footnote:[Turns out the launcher service sorts the results by default unless `no_sort` is set to `true`.]
 
 
 

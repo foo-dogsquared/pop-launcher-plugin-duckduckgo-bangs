@@ -6,15 +6,6 @@
 
 A link:https://github.com/pop-os/launcher[Pop launcher plugin] that provides a quick searching interface with link:https://duckduckgo.com/bang[Duckduckgo bangs].
 
-[CAUTION]
-====
-Beware, spaghetti code is ahead.
-I just wanted a reason to use Rust and explore a little bit about the renewed Pop launcher.
-Though, I'll maintain this project for a bit (before becoming inactive again ;p).
-
-It is also a young project so expect some instability and sudden changes.
-====
-
 
 
 
@@ -124,6 +115,10 @@ It is a simple JSON object with the possible keys and their values.
 | `force_download`
 | Indicates whether or not the fallback database should be downloaded if no database has been found.
 | `true`
+
+| `default_bangs`
+| A list of bangs to be used when no bangs from the search query was found.
+| empty array
 |===
 
 This is the equivalent JSON for the default configuration.

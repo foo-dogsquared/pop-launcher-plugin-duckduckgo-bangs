@@ -1,6 +1,5 @@
 mod config;
 mod utils;
-
 use std::collections::HashMap;
 use std::io;
 
@@ -94,8 +93,14 @@ impl App {
     fn activate(&mut self, _id: u32) {
         let query = self.get_search_query();
         let encoded_query = encode(&query);
-        for bang_trigger in self.get_bang_query() {
-            if let Some(bang) = self.db.get(bang_trigger) {
+        let mut bangs_from_query = self.get_bang_query();
+
+        if bangs_from_query.is_empty() {
+            bangs_from_query.append(&mut self.config.default_bangs.clone());
+        }
+
+        for bang_trigger in bangs_from_query {
+            if let Some(bang) = self.db.get(&bang_trigger) {
                 let url = bang.url.clone().replace(BANGS_PLACEHOLDER, &encoded_query);
                 utils::xdg_open(url);
             }
@@ -191,10 +196,11 @@ impl App {
     }
 
     /// Get the bangs from the search query.
-    fn get_bang_query(&self) -> Vec<&str> {
+    fn get_bang_query(&self) -> Vec<String> {
         self.search
             .iter()
             .filter_map(|q| q.strip_prefix(BANG_INDICATOR))
+            .map(|b| b.to_string())
             .collect()
     }
 

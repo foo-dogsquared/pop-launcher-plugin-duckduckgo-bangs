@@ -128,22 +128,33 @@ pub fn load(app_config: &AppConfig) -> Database {
 
 #[derive(Serialize, Deserialize)]
 pub struct AppConfig {
+    /// The URL of the default database.
+    /// It is to be used when there's no database file is found.
     #[serde(default = "AppConfig::default_db")]
     pub db_url: String,
 
+    /// Indicates the maximum number of search results.
     #[serde(default = "AppConfig::max_limit")]
     pub max_limit: u64,
 
+    /// Indicates whether to force downloading of the default database when no database file is
+    /// found.
     #[serde(default = "AppConfig::force_download")]
     pub force_download: bool,
+
+    /// A list of bangs to be used when there's no bang found from the search query.
+    pub default_bangs: Vec<String>,
 }
 
+/// Plugin-specific configuration.
+/// It should come from `config.json` from one of the plugin paths.
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             db_url: Self::default_db(),
             max_limit: Self::max_limit(),
             force_download: Self::force_download(),
+            default_bangs: Vec::new(),
         }
     }
 }
