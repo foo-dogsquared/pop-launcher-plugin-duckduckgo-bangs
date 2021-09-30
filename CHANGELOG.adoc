@@ -7,9 +7,14 @@ The format is based on link:https://keepachangelog.com/en/1.0.0/[Keep a Changelo
 and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 
-== Unreleased
 
-Release date is whenever I maintained or remembered this project exists. ;p
+
+== v1.1.0 - 2021-09-30
+
+Main highlight of this release is the addition of plugin-specific configuration.
+It should be located in `$POP_PLUGIN_PATH/bangs/config.json`.
+Unlike the bangs database, the configuration is not merged between different plugin paths.
+
 
 === Added
 

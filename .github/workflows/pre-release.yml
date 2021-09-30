@@ -58,5 +58,5 @@ jobs:
           prerelease: true
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
-          title: "Pre-release build"
+          title: "Development build"
           files: "**/pop-launcher-plugin-bangs-*.tar.gz"
