@@ -9,7 +9,27 @@ and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Ve
 
 
 
-== v1.1.0 - 2021-09-30
+== 1.2.0 - 2021-10-01
+
+I don't think this is a good application of "Release early, release often" but there are minor behavior changes for the plugin.
+Which means a new version of the plugin.
+
+
+=== Changed
+
+* The plugin can now only accept one bangs database file at a time.
+* `force_download` default value from `true` to `false` due to fixed behavior.
+
+
+=== Fixed
+
+* `force_download` now forces to download the database and use the local plugin path (e.g., `$HOME/.local/share/pop-launcher/plugins`).
+This is considered a fix because I didn't realize `force_download` is essentially useless. ;p
+
+
+
+
+== 1.1.0 - 2021-09-30
 
 Main highlight of this release is the addition of plugin-specific configuration.
 It should be located in `$POP_PLUGIN_PATH/bangs/config.json`.
@@ -33,7 +53,7 @@ footnote:[Turns out the launcher service sorts the results by default unless `no
 
 
 
-== v1.0.0 - 2021-09-26
+== 1.0.0 - 2021-09-26
 
 The initial release.
 

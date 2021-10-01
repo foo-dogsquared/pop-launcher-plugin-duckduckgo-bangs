@@ -8,6 +8,9 @@ use crate::utils::{find, local_plugin_dir};
 
 use serde::{Deserialize, Serialize};
 
+pub static BANG_FILENAME: &str = "db.json";
+pub static PLUGIN_CONFIG_FILENAME: &str = "config.json";
+
 /// The bangs database.
 /// It's based from how [Duckduckgo's own database](https://duckduckgo.com/bang.js) is structured.
 pub type Database = HashMap<String, Bang>;
@@ -59,36 +62,46 @@ impl Bang {
 }
 
 /// Loads the database (`db.json`) from the plugin paths.
-/// Please take note it merges the database from each plugin path.
+/// It will only accept one database at a time.
+/// If it has no database or forcing the download, it will use the database from the home directory
+/// instead.
 ///
 /// It will also take care of automatically downloading the default database in the local plugin
 /// path if there's no database found in the plugin paths.
 pub fn load(app_config: &AppConfig) -> Database {
     let mut db = Database::default();
 
-    // Finding all `db.json` files and merging the databases together.
-    // I'm not sure if this is ideal so expect this will change in the future.
-    // It'll most likely change to override the top-level plugin path (e.g., the user plugins
-    // directory over the distribution plugin path).
-    let mut paths: Vec<PathBuf> = find("bangs", "db.json").collect();
+    // Finding all `db.json` files, taking only the local (as much as possible) plugin path.
+    let mut db_path: PathBuf = match find("bangs", BANG_FILENAME).take(1).next() {
+        Some(p) => p,
+        None => {
+            let mut p = local_plugin_dir("bangs");
+            p.push(BANG_FILENAME);
 
-    // Download Duckduckgo's bang database when there's no such database anywhere.
+            p
+        }
+    };
+
+    // Download Duckduckgo's bang database when there's no such database anywhere or if the app is
+    // configured to force the download.
     // We'll download it in the home directory (since that is just the safest location for it).
     // Specifically at `LOCAL` variable given from the `pop_launcher` crate.
     // Being synchronous makes it a bit harder to handle this well.
     //
     // We also use `curl` from the command line instead of using an HTTP client because I just want
     // to save some bytes lel.
-    if paths.is_empty() && app_config.force_download {
-        eprintln!("[bangs] no found database files, downloading the default database");
+    if app_config.force_download || !db_path.is_file() {
+        eprintln!("[bangs] forced download, downloading the configured database");
         match Command::new("curl")
             .arg("--silent")
             .arg(&app_config.db_url)
             .output()
         {
             Ok(process) => {
-                let mut db_path = local_plugin_dir("bangs");
-                db_path.push("db.json");
+                // We'll force the download to the home directory since it is the safest
+                // location.
+                db_path = local_plugin_dir("bangs");
+                db_path.push(BANG_FILENAME);
 
                 if let Ok(mut file) = File::create(&db_path) {
                     match file.write(&process.stdout) {
@@ -96,23 +109,12 @@ pub fn load(app_config: &AppConfig) -> Database {
                         Err(e) => eprintln!("[bangs] not able to write in to file: {}", e),
                     }
                 }
-
-                paths.push(db_path);
             }
             Err(err) => eprintln!("[bangs] default database download failed: {}", err),
         }
     }
 
-    // Merge all databases.
-    for path in find("bangs", "db.json") {
-        let string = match std::fs::read_to_string(&path) {
-            Ok(string) => string,
-            Err(why) => {
-                eprintln!("[bangs] failed to read config: {}", why);
-                continue;
-            }
-        };
-
+    if let Ok(string) = std::fs::read_to_string(&db_path) {
         match serde_json::from_str::<Vec<Bang>>(&string) {
             Ok(config) => {
                 for bang in config {
@@ -147,7 +149,6 @@ pub struct AppConfig {
 }
 
 /// Plugin-specific configuration.
-/// It should come from `config.json` from one of the plugin paths.
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
@@ -166,8 +167,10 @@ impl AppConfig {
     pub fn load() -> Self {
         let mut config = Self::default();
 
-        // We'll only take one of them to not let the configuration confusion happen.
-        if let Some(config_file) = find("bangs", "config.json").take(1).next() {
+        // We'll also take only one.
+        // Keep in mind the list of plugin paths from `pop_launcher` crate are sorted from local to
+        // system-wide locations.
+        if let Some(config_file) = find("bangs", PLUGIN_CONFIG_FILENAME).take(1).next() {
             if let Ok(content) = std::fs::read_to_string(config_file) {
                 match serde_json::from_str::<Self>(&content) {
                     Ok(new_config) => config = new_config,
@@ -189,6 +192,6 @@ impl AppConfig {
     }
 
     fn force_download() -> bool {
-        true
+        false
     }
 }

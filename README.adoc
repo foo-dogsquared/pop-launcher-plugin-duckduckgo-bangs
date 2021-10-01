@@ -67,6 +67,8 @@ The plugin has a certain format to follow to do its thing.
 ! ${SEARCH_QUERY}...
 ----
 
+The search query should have at least one bang for it to work (unless you've set `default_bangs` from the <<Plugin-specific configuration>>).
+
 You can search bangs within the search query by prepending it with `{bangs_search_query_prefix}`.
 The plugin will only give search results if a bang is the last part of the search query.
 
@@ -113,8 +115,11 @@ It is a simple JSON object with the possible keys and their values.
 | 8
 
 | `force_download`
-| Indicates whether or not the fallback database should be downloaded if no database has been found.
-| `true`
+| Indicates whether or not the fallback database should be downloaded forcibly.
+This will override the database to be downloaded in the home directory.
+Be careful as this will override already existing database files and will download each time the plugin is invoked.
+Don't enable this unless you have good and unlimited internet connection.
+| `false`
 
 | `default_bangs`
 | A list of bangs to be used when no bangs from the search query was found.
@@ -128,7 +133,7 @@ This is the equivalent JSON for the default configuration.
 {
     "db_url": "https://duckduckgo.com/bang.js",
     "max_limit": 8,
-    "force_download": true
+    "force_download": false
 }
 ----
 
@@ -178,8 +183,6 @@ It'll be more useful once this project continues to be develop which you can fre
 
 
 == Future considerations
-
-* Remove the database merging from different plugin paths.
 
 * Make a consistent interface similar to the built-in plugins.
 The way how a user can interact with the plugin is slightly different compared to them — e.g., you have to press 'Enter' to open the URLs instead of adding them.
