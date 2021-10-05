@@ -9,6 +9,18 @@ and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Ve
 
 
 
+== Unreleased
+
+This is most likely a maintenance release.
+
+
+=== Fixed
+
+* The cache format has been changed to give more accurate search results.
+
+
+
+
 == 1.2.0 - 2021-10-01
 
 I don't think this is a good application of "Release early, release often" but there are minor behavior changes for the plugin.

@@ -45,8 +45,8 @@ impl Bang {
     /// Useful for searching if the query is found on the bang data.
     pub fn format(&self) -> String {
         format!(
-            "{} | {} > {} | {}",
-            self.trigger, self.category, self.subcategory, self.domain
+            "{} {} {} {} {}",
+            self.trigger, self.name, self.category, self.subcategory, self.domain
         )
     }
 

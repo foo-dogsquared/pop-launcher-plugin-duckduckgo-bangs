@@ -93,7 +93,7 @@ impl App {
     fn activate(&mut self, _id: u32) {
         let query = self.get_search_query();
         let encoded_query = encode(&query);
-        let mut bangs_from_query = self.get_bang_query();
+        let mut bangs_from_query = self.get_bangs_from_search_query();
 
         if bangs_from_query.is_empty() {
             bangs_from_query.append(&mut self.config.default_bangs.clone());
@@ -195,8 +195,7 @@ impl App {
         }
     }
 
-    /// Get the bangs from the search query.
-    fn get_bang_query(&self) -> Vec<String> {
+    fn get_bangs_from_search_query(&self) -> Vec<String> {
         self.search
             .iter()
             .filter_map(|q| q.strip_prefix(BANG_INDICATOR))
@@ -204,7 +203,7 @@ impl App {
             .collect()
     }
 
-    /// Get all of the non-bangs from the search query.
+    /// Get the search query excluding the bangs.
     fn get_search_query(&self) -> String {
         self.search
             .iter()
