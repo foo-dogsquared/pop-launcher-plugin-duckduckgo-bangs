@@ -1,6 +1,6 @@
 (
-    name: "Bangs",
-    description: "Search quickly with Duckduckgo bangs",
+    name: "Duckduckgo bangs",
+    description: "Syntax: ! <search query>... <bangs>...\nExample: ! hello world !ddg !yt",
     query: (
         regex: "^(!)+",
         help: "! ",
@@ -10,3 +10,4 @@
     bin: (path: "bangs"),
     icon: Name("system-search")
 )
+
