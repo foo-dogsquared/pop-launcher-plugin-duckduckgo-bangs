@@ -1,9 +1,13 @@
 mod config;
 mod utils;
 use std::collections::HashMap;
-use std::io;
+use std::fs::File;
+use std::io::{self, Write};
+use std::path::PathBuf;
+use std::process::Command;
 
-use crate::config::AppConfig;
+use crate::config::{AppConfig, Database, BANG_FILENAME};
+use crate::utils::{find, local_plugin_dir};
 
 use pop_launcher::{PluginResponse, PluginSearchResult, Request};
 use urlencoding::encode;
@@ -42,7 +46,7 @@ struct App {
     config: AppConfig,
 
     /// Contains the bangs database.
-    db: config::Database,
+    db: Database,
 
     /// The cache for the items generated from the database.
     /// This is where search operations should go.
@@ -63,18 +67,59 @@ struct App {
 impl Default for App {
     fn default() -> Self {
         let config = AppConfig::load();
-        let db = config::load(&config);
+
+        // Finding all `db.json` files, taking only the local (as much as possible) plugin path.
+        let mut db_path: PathBuf = match find("bangs", BANG_FILENAME).take(1).next() {
+            Some(p) => p,
+            None => {
+                let mut p = local_plugin_dir("bangs");
+                p.push(BANG_FILENAME);
+
+                p
+            }
+        };
+
+        // Download Duckduckgo's bang database when there's no such database anywhere or if the app is
+        // configured to force the download.
+        // We'll download it in the home directory (since that is just the safest location for it).
+        // Specifically at `LOCAL` variable given from the `pop_launcher` crate.
+        // Being synchronous makes it a bit harder to handle this well.
+        //
+        // We also use `curl` from the command line instead of using an HTTP client because I just want
+        // to save some bytes lel.
+        if config.force_download || !db_path.is_file() {
+            eprintln!("[bangs] forced download, downloading the configured database");
+            match Command::new("curl")
+                .arg("--silent")
+                .arg(&config.db_url)
+                .output()
+            {
+                Ok(process) => {
+                    // We'll force the download to the home directory since it is the safest
+                    // location.
+                    db_path = local_plugin_dir("bangs");
+                    db_path.push(BANG_FILENAME);
+
+                    if let Ok(mut file) = File::create(&db_path) {
+                        match file.write(&process.stdout) {
+                            Ok(_) => {
+                                eprintln!("[bangs] default database file successfully downloaded")
+                            }
+                            Err(e) => eprintln!("[bangs] not able to write in to file: {}", e),
+                        }
+                    }
+                }
+                Err(err) => eprintln!("[bangs] default database download failed: {}", err),
+            }
+        }
+
+        let db = Database::load(&db_path);
         let mut cache = Vec::new();
 
         // Generating the cache from the database.
-        db.iter().for_each(|(_k, bang)| {
-            cache.push((bang.trigger.clone(), bang.format().to_lowercase()))
+        db.iter().for_each(|bang| {
+            cache.push((bang.trigger.clone(), bang.format().to_lowercase()));
         });
-
-        // Sorting the database from biggest to smallest relevance.
-        // We also do it once rather than sorting the search results can save some cycles
-        // unless it has returned inferior results.
-        cache.sort_by_key(|(trigger, _format)| 0 - db[trigger].relevance as i64);
 
         Self {
             db,

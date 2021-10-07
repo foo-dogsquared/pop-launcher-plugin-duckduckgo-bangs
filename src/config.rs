@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-use std::process::Command;
+use std::iter::Iterator;
+use std::ops::Index;
+use std::path::Path;
 
-use crate::utils::{find, local_plugin_dir};
+use crate::utils::find;
 
 use serde::{Deserialize, Serialize};
 
@@ -13,22 +11,67 @@ pub static PLUGIN_CONFIG_FILENAME: &str = "config.json";
 
 /// The bangs database.
 /// It's based from how [Duckduckgo's own database](https://duckduckgo.com/bang.js) is structured.
-pub type Database = HashMap<String, Bang>;
+pub struct Database {
+    data: Vec<Bang>,
+}
+
+impl Database {
+    /// Creates an empty database.
+    pub fn new() -> Self {
+        Self { data: Vec::new() }
+    }
+
+    /// Loads the database from a given path.
+    pub fn load(db_path: &Path) -> Self {
+        let mut db = Self::new();
+
+        if let Ok(string) = std::fs::read_to_string(&db_path) {
+            match serde_json::from_str::<Vec<Bang>>(&string) {
+                Ok(config) => {
+                    for bang in config {
+                        db.data.push(bang);
+                    }
+                }
+                Err(why) => eprintln!("[bangs] failed to deserialize config: {}", why),
+            }
+        }
+
+        db.data.sort_by(|a, b| b.partial_cmp(a).unwrap());
+
+        db
+    }
+
+    /// Returns an iterator visiting all values inside of the database.
+    pub fn iter(&self) -> impl Iterator<Item = &Bang> + '_ {
+        self.data.iter()
+    }
+
+    /// Get the bang corresponding to the trigger.
+    pub fn get(&self, trigger: impl ToString) -> Option<&Bang> {
+        self.data
+            .iter()
+            .filter(|bang| bang.trigger == trigger.to_string())
+            .take(1)
+            .next()
+    }
+}
+
+impl<'a> Index<&'a str> for Database {
+    type Output = Bang;
+
+    fn index(&self, trigger: &'a str) -> &Self::Output {
+        self.get(trigger).unwrap()
+    }
+}
 
 /// A bang object directly based from the Duckduckgo's database.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 pub struct Bang {
-    #[serde(alias = "c", default)]
-    pub category: String,
-
-    #[serde(alias = "sc", default)]
-    pub subcategory: String,
-
-    #[serde(alias = "d")]
-    pub domain: String,
-
     #[serde(alias = "r", default)]
     pub relevance: u64,
+
+    #[serde(alias = "u")]
+    pub url: String,
 
     #[serde(alias = "t")]
     pub trigger: String,
@@ -36,8 +79,14 @@ pub struct Bang {
     #[serde(alias = "s")]
     pub name: String,
 
-    #[serde(alias = "u")]
-    pub url: String,
+    #[serde(alias = "d")]
+    pub domain: String,
+
+    #[serde(alias = "c", default)]
+    pub category: String,
+
+    #[serde(alias = "sc", default)]
+    pub subcategory: String,
 }
 
 impl Bang {
@@ -59,73 +108,6 @@ impl Bang {
     pub fn description(&self) -> String {
         format!("{} > {}", self.category, self.subcategory)
     }
-}
-
-/// Loads the database (`db.json`) from the plugin paths.
-/// It will only accept one database at a time.
-/// If it has no database or forcing the download, it will use the database from the home directory
-/// instead.
-///
-/// It will also take care of automatically downloading the default database in the local plugin
-/// path if there's no database found in the plugin paths.
-pub fn load(app_config: &AppConfig) -> Database {
-    let mut db = Database::default();
-
-    // Finding all `db.json` files, taking only the local (as much as possible) plugin path.
-    let mut db_path: PathBuf = match find("bangs", BANG_FILENAME).take(1).next() {
-        Some(p) => p,
-        None => {
-            let mut p = local_plugin_dir("bangs");
-            p.push(BANG_FILENAME);
-
-            p
-        }
-    };
-
-    // Download Duckduckgo's bang database when there's no such database anywhere or if the app is
-    // configured to force the download.
-    // We'll download it in the home directory (since that is just the safest location for it).
-    // Specifically at `LOCAL` variable given from the `pop_launcher` crate.
-    // Being synchronous makes it a bit harder to handle this well.
-    //
-    // We also use `curl` from the command line instead of using an HTTP client because I just want
-    // to save some bytes lel.
-    if app_config.force_download || !db_path.is_file() {
-        eprintln!("[bangs] forced download, downloading the configured database");
-        match Command::new("curl")
-            .arg("--silent")
-            .arg(&app_config.db_url)
-            .output()
-        {
-            Ok(process) => {
-                // We'll force the download to the home directory since it is the safest
-                // location.
-                db_path = local_plugin_dir("bangs");
-                db_path.push(BANG_FILENAME);
-
-                if let Ok(mut file) = File::create(&db_path) {
-                    match file.write(&process.stdout) {
-                        Ok(_) => eprintln!("[bangs] default database file successfully downloaded"),
-                        Err(e) => eprintln!("[bangs] not able to write in to file: {}", e),
-                    }
-                }
-            }
-            Err(err) => eprintln!("[bangs] default database download failed: {}", err),
-        }
-    }
-
-    if let Ok(string) = std::fs::read_to_string(&db_path) {
-        match serde_json::from_str::<Vec<Bang>>(&string) {
-            Ok(config) => {
-                for bang in config {
-                    db.insert(bang.trigger.clone(), bang);
-                }
-            }
-            Err(why) => eprintln!("[bangs] failed to deserialize config: {}", why),
-        }
-    }
-
-    db
 }
 
 #[derive(Serialize, Deserialize)]
@@ -193,5 +175,65 @@ impl AppConfig {
 
     fn force_download() -> bool {
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_bang() -> Bang {
+        Bang {
+            relevance: 4000,
+            url: "https://duckduckgo.com/?q={{{s}}}".to_string(),
+            name: "Duckduckgo".to_string(),
+            trigger: "ddg".to_string(),
+            category: "Web".to_string(),
+            subcategory: "Search".to_string(),
+            domain: "duckduckgo.com".to_string(),
+        }
+    }
+
+    #[test]
+    fn bang_with_larger_relevance_should_be_greater() {
+        let greater_bang = mock_bang();
+        let lesser_bang = Bang {
+            relevance: 3000,
+            ..greater_bang.clone()
+        };
+
+        assert!(greater_bang > lesser_bang);
+    }
+
+    #[test]
+    fn alphabetically_first_url_of_bang_should_be_greater() {
+        let greater_bang = mock_bang();
+        let lesser_bang = Bang {
+            url: "https://buckduckgo.com/?q={{{s}}}".to_string(),
+            ..greater_bang.clone()
+        };
+
+        assert!(greater_bang > lesser_bang);
+    }
+
+    #[test]
+    fn two_identical_bangs_should_be_equal() {
+        // We're not cloning here to show that two different instances with identical data is
+        // really equal.
+        let first_bang = mock_bang();
+        let second_bang = mock_bang();
+
+        assert!(first_bang == second_bang);
+    }
+
+    #[test]
+    fn alphabetically_first_trigger_of_bang_should_be_greater() {
+        let greater_bang = mock_bang();
+        let lesser_bang = Bang {
+            trigger: "bdg".to_string(),
+            ..greater_bang.clone()
+        };
+
+        assert!(greater_bang > lesser_bang);
     }
 }

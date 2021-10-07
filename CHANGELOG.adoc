@@ -18,6 +18,10 @@ This is most likely a maintenance release.
 
 * The description of the plugin metadata keeping up with the link:https://github.com/pop-os/launcher/commit/0c7f3631d3d7f03919a7a378c57a5e8a46e4525c[recent convention].
 
+* The database has been reworked.
+This shouldn't affect end users overall.
+footnote:[This is only listed for the sake of my own sanity. ;p]
+
 
 === Fixed
 
