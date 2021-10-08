@@ -9,9 +9,9 @@ and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Ve
 
 
 
-== Unreleased
+== v1.3.0 - 2021-10-08
 
-This is most likely a maintenance release.
+Oh look, another minor release.
 
 
 === Added
