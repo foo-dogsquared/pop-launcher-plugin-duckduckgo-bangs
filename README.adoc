@@ -124,6 +124,11 @@ Don't enable this unless you have good and unlimited internet connection.
 | `default_bangs`
 | A list of bangs to be used when no bangs from the search query was found.
 | empty array
+
+| `unique_bangs`
+| Indicates whether to remove bangs with duplicate URLs.
+Very helpful if you don't want aliases to clutter your search result.
+| `false`
 |===
 
 This is the equivalent JSON for the default configuration.
@@ -133,7 +138,9 @@ This is the equivalent JSON for the default configuration.
 {
     "db_url": "https://duckduckgo.com/bang.js",
     "max_limit": 8,
-    "force_download": false
+    "force_download": false,
+    "unique_bangs": false,
+    "default_bangs": []
 }
 ----
 

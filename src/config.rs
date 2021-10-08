@@ -46,6 +46,14 @@ impl Database {
         self.data.iter()
     }
 
+    /// Retains all elements from a given predicate.
+    pub fn retain<F>(&mut self, f: F)
+    where
+        F: FnMut(&Bang) -> bool,
+    {
+        self.data.retain(f)
+    }
+
     /// Get the bang corresponding to the trigger.
     pub fn get(&self, trigger: impl ToString) -> Option<&Bang> {
         self.data
@@ -128,6 +136,10 @@ pub struct AppConfig {
 
     /// A list of bangs to be used when there's no bang found from the search query.
     pub default_bangs: Vec<String>,
+
+    /// Specify whether the database should remove the duplicate bangs with the same URL.
+    #[serde(default = "AppConfig::unique_bangs")]
+    pub unique_bangs: bool,
 }
 
 /// Plugin-specific configuration.
@@ -138,6 +150,7 @@ impl Default for AppConfig {
             max_limit: Self::max_limit(),
             force_download: Self::force_download(),
             default_bangs: Vec::new(),
+            unique_bangs: Self::unique_bangs(),
         }
     }
 }
@@ -174,6 +187,10 @@ impl AppConfig {
     }
 
     fn force_download() -> bool {
+        false
+    }
+
+    fn unique_bangs() -> bool {
         false
     }
 }

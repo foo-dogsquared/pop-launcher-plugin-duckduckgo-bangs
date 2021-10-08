@@ -14,6 +14,12 @@ and this project adheres to link:https://semver.org/spec/v2.0.0.html[Semantic Ve
 This is most likely a maintenance release.
 
 
+=== Added
+
+* The `unique_bangs` plugin option.
+This indicates whether the database should remove bangs with duplicate URLs and very useful for removing aliases from cluttering the search results.
+
+
 === Updated
 
 * The description of the plugin metadata keeping up with the link:https://github.com/pop-os/launcher/commit/0c7f3631d3d7f03919a7a378c57a5e8a46e4525c[recent convention].

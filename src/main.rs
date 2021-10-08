@@ -1,6 +1,6 @@
 mod config;
 mod utils;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -113,13 +113,18 @@ impl Default for App {
             }
         }
 
-        let db = Database::load(&db_path);
+        let mut db = Database::load(&db_path);
         let mut cache = Vec::new();
 
         // Generating the cache from the database.
         db.iter().for_each(|bang| {
             cache.push((bang.trigger.clone(), bang.format().to_lowercase()));
         });
+
+        if config.unique_bangs {
+            let mut urls: HashSet<String> = HashSet::new();
+            db.retain(move |b| urls.insert(b.url.clone()));
+        }
 
         Self {
             db,
