@@ -1,37 +1,14 @@
-use std::ffi::OsStr;
-use std::fs;
-use std::io::{BufRead, Write};
 use std::iter::Iterator;
 use std::path::PathBuf;
-use std::process::Command;
 
-use dirs::home_dir;
-use pop_launcher::{plugin_paths, PluginResponse, LOCAL_PLUGINS};
-use serde::Deserialize;
+use pop_launcher::{plugin_paths, PluginResponse};
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
-/// Fetch the inputs from a buffer.
-/// This is mostly used for reading the standard input stream.
-pub fn json_input_stream<S>(input: impl BufRead) -> impl Iterator<Item = serde_json::Result<S>>
-where
-    S: for<'a> Deserialize<'a>,
-{
-    input
-        .lines()
-        .map(Result::unwrap)
-        .map(|line| serde_json::from_str::<S>(&line))
-}
-
-/// Send `PluginResponse` to the specified stream.
-pub fn send(tx: &mut impl Write, response: PluginResponse) {
+pub async fn send<W: AsyncWrite + Unpin>(tx: &mut W, response: PluginResponse) {
     if let Ok(mut bytes) = serde_json::to_string(&response) {
         bytes.push('\n');
-        let _ = tx.write_all(bytes.as_bytes());
+        let _ = tx.write_all(bytes.as_bytes()).await;
     }
-}
-
-/// Open the given file through `xdg-open` command.
-pub fn xdg_open<S: AsRef<OsStr>>(file: S) {
-    let _ = Command::new("xdg-open").arg(file).spawn();
 }
 
 /// Find `file` inside of the plugin `name` in each of the plugin paths.
@@ -52,19 +29,4 @@ pub fn find<'a>(name: &'a str, file: &'a str) -> impl Iterator<Item = PathBuf> +
                 None
             })
         })
-}
-
-/// Returns the local path of the given plugin as `name`.
-pub fn local_plugin_dir(name: &str) -> PathBuf {
-    let mut path = fs::canonicalize(LOCAL_PLUGINS)
-        .unwrap_or_else(|_| PathBuf::from("~/.local/share/pop-launcher/plugins"));
-
-    if let Ok(p) = path.strip_prefix("~/") {
-        // We'll panic here since it is expected to run it with a home directory.
-        path = home_dir().expect("user does not have home dir").join(p)
-    }
-
-    path.push(name);
-
-    path
 }
