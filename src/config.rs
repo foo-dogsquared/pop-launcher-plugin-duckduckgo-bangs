@@ -1,16 +1,24 @@
-use std::iter::Iterator;
+use std::error::Error;
+use std::iter::{Extend, Iterator};
 use std::ops::Index;
-use std::path::Path;
 
 use crate::utils::find;
 
+use curl::easy::{Easy2, Handler, WriteError};
 use serde::{Deserialize, Serialize};
 
-pub static BANG_FILENAME: &str = "db.json";
 pub static PLUGIN_CONFIG_FILENAME: &str = "config.json";
 
+pub struct BytesCollector(pub Vec<u8>);
+
+impl Handler for BytesCollector {
+    fn write(&mut self, data: &[u8]) -> Result<usize, WriteError> {
+        self.0.extend_from_slice(data);
+        Ok(data.len())
+    }
+}
+
 /// The bangs database.
-/// It's based from how [Duckduckgo's own database](https://duckduckgo.com/bang.js) is structured.
 pub struct Database {
     data: Vec<Bang>,
 }
@@ -21,24 +29,24 @@ impl Database {
         Self { data: Vec::new() }
     }
 
-    /// Loads the database from a given path.
-    pub fn load(db_path: &Path) -> Self {
+    /// Loads the database from a given URL.
+    pub fn load(url: &str) -> Result<Self, Box<dyn Error>> {
         let mut db = Self::new();
 
-        if let Ok(string) = std::fs::read_to_string(&db_path) {
-            match serde_json::from_str::<Vec<Bang>>(&string) {
-                Ok(config) => {
-                    for bang in config {
-                        db.data.push(bang);
-                    }
-                }
-                Err(why) => eprintln!("[bangs] failed to deserialize config: {}", why),
-            }
-        }
+        let mut handle = Easy2::new(BytesCollector(Vec::new()));
+        handle.get(true)?;
+        handle.accept_encoding("gzip")?;
+        handle.url(url)?;
+        handle.perform()?;
 
+        // TODO: Improve error handling for this part, please.
+        // Don't make it panic,
+        assert_eq!(handle.response_code().unwrap(), 200);
+        let contents = handle.get_ref();
+
+        db.data = serde_json::from_slice::<Vec<Bang>>(&contents.0)?;
         db.data.sort_by(|a, b| b.partial_cmp(a).unwrap());
-
-        db
+        Ok(db)
     }
 
     /// Returns an iterator visiting all values inside of the database.
@@ -69,6 +77,12 @@ impl<'a> Index<&'a str> for Database {
 
     fn index(&self, trigger: &'a str) -> &Self::Output {
         self.get(trigger).unwrap()
+    }
+}
+
+impl Extend<Bang> for Database {
+    fn extend<T: IntoIterator<Item = Bang>>(&mut self, iter: T) {
+        self.data.extend(iter);
     }
 }
 
@@ -155,11 +169,6 @@ pub struct AppConfig {
     #[serde(default = "AppConfig::max_limit")]
     pub max_limit: u64,
 
-    /// Indicates whether to force downloading of the default database when no database file is
-    /// found.
-    #[serde(default = "AppConfig::force_download")]
-    pub force_download: bool,
-
     /// A list of bangs to be used when there's no bang found from the search query.
     pub default_bangs: Vec<String>,
 
@@ -174,7 +183,6 @@ impl Default for AppConfig {
         Self {
             db_url: Self::default_db(),
             max_limit: Self::max_limit(),
-            force_download: Self::force_download(),
             default_bangs: Vec::new(),
             unique_bangs: Self::unique_bangs(),
         }
@@ -209,11 +217,7 @@ impl AppConfig {
     }
 
     fn max_limit() -> u64 {
-        8
-    }
-
-    fn force_download() -> bool {
-        false
+        12
     }
 
     fn unique_bangs() -> bool {

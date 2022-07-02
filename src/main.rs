@@ -68,52 +68,7 @@ impl Default for App {
     fn default() -> Self {
         let config = AppConfig::load();
 
-        // Finding all `db.json` files, taking only the local (as much as possible) plugin path.
-        let mut db_path: PathBuf = match find("bangs", BANG_FILENAME).take(1).next() {
-            Some(p) => p,
-            None => {
-                let mut p = local_plugin_dir("bangs");
-                p.push(BANG_FILENAME);
-
-                p
-            }
-        };
-
-        // Download Duckduckgo's bang database when there's no such database anywhere or if the app is
-        // configured to force the download.
-        // We'll download it in the home directory (since that is just the safest location for it).
-        // Specifically at `LOCAL` variable given from the `pop_launcher` crate.
-        // Being synchronous makes it a bit harder to handle this well.
-        //
-        // We also use `curl` from the command line instead of using an HTTP client because I just want
-        // to save some bytes lel.
-        if config.force_download || !db_path.is_file() {
-            eprintln!("[bangs] forced download, downloading the configured database");
-            match Command::new("curl")
-                .arg("--silent")
-                .arg(&config.db_url)
-                .output()
-            {
-                Ok(process) => {
-                    // We'll force the download to the home directory since it is the safest
-                    // location.
-                    db_path = local_plugin_dir("bangs");
-                    db_path.push(BANG_FILENAME);
-
-                    if let Ok(mut file) = File::create(&db_path) {
-                        match file.write(&process.stdout) {
-                            Ok(_) => {
-                                eprintln!("[bangs] default database file successfully downloaded")
-                            }
-                            Err(e) => eprintln!("[bangs] not able to write in to file: {}", e),
-                        }
-                    }
-                }
-                Err(err) => eprintln!("[bangs] default database download failed: {}", err),
-            }
-        }
-
-        let mut db = Database::load(&db_path);
+        let mut db = Database::load(&config.db_url).unwrap();
         let mut cache = Vec::new();
 
         // Generating the cache from the database.
