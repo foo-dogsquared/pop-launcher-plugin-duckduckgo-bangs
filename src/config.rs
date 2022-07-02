@@ -72,29 +72,26 @@ impl<'a> Index<&'a str> for Database {
     }
 }
 
-/// A bang object directly based from the Duckduckgo's database.
+/// A bang object directly based from the Brave's bang database schema.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 pub struct Bang {
-    #[serde(alias = "r", default)]
-    pub relevance: u64,
-
-    #[serde(alias = "u")]
-    pub url: String,
-
-    #[serde(alias = "t")]
+    /// The bang used to trigger the search.
+    #[serde(alias = "bang")]
     pub trigger: String,
 
-    #[serde(alias = "s")]
-    pub name: String,
+    /// The URL directly pointing to the query alongside a hint where the search query could be
+    /// inserted.
+    pub url: String,
 
-    #[serde(alias = "d")]
-    pub domain: String,
+    #[serde(alias = "meta")]
+    pub metadata: BangMetadata,
 
-    #[serde(alias = "c", default)]
+    /// The title of the website.
+    pub title: String,
+
     pub category: String,
 
-    #[serde(alias = "sc", default)]
-    pub subcategory: String,
+    pub sub_category: String,
 }
 
 impl Bang {
@@ -103,19 +100,48 @@ impl Bang {
     pub fn format(&self) -> String {
         format!(
             "{} {} {} {} {}",
-            self.trigger, self.name, self.category, self.subcategory, self.domain
+            self.trigger, self.title, self.category, self.sub_category, self.metadata.netloc
         )
     }
 
     /// The launcher item name for the bang.
     pub fn name(&self) -> String {
-        format!("{} | {} ({})", self.trigger, self.name, self.domain)
+        format!(
+            "{} | {} ({})",
+            self.trigger, self.title, self.metadata.netloc
+        )
     }
 
     /// The launcher item description for the bang.
     pub fn description(&self) -> String {
-        format!("{} > {}", self.category, self.subcategory)
+        format!("{} > {}", self.category, self.sub_category)
     }
+}
+
+/// Contains various metadata to the URL of the referred bang. This is particularly useful to point
+/// to general locations of the bang. However, since it doesn't contain hints where the search
+/// query could be inserted, it can't replicate the URL specifically used for bangs functionality.
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BangMetadata {
+    /// The network location of the URL.
+    pub netloc: String,
+
+    /// The full hostname of the URL.
+    pub hostname: Option<String>,
+
+    /// Indicates the location of the favicon for the bang location. The value could be empty which
+    /// would be handled by the plugin with various fallbacks.
+    pub favicon: Option<String>,
+
+    /// The scheme part of the URL.
+    pub scheme: String,
+
+    /// The path of the search page delimited with `>`.
+    ///
+    /// A bang metadata with a path of `> search > page` will refer to the
+    /// `<scheme>://<netloc>/search/page` with `>` substituted with the path delimiter and trimmed
+    /// whitespaces.
+    pub path: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -179,7 +205,7 @@ impl AppConfig {
 
     // The following functions are just used for making the default values.
     fn default_db() -> String {
-        "https://duckduckgo.com/bang.js".to_string()
+        "https://search.brave.com/bang/data".to_string()
     }
 
     fn max_limit() -> u64 {
@@ -201,25 +227,19 @@ mod tests {
 
     fn mock_bang() -> Bang {
         Bang {
-            relevance: 4000,
             url: "https://duckduckgo.com/?q={{{s}}}".to_string(),
-            name: "Duckduckgo".to_string(),
+            title: "Duckduckgo".to_string(),
             trigger: "ddg".to_string(),
             category: "Web".to_string(),
-            subcategory: "Search".to_string(),
-            domain: "duckduckgo.com".to_string(),
+            sub_category: "Search".to_string(),
+            metadata: BangMetadata {
+                favicon: Some("https://imgs.search.brave.com/keBhPmRqAbkFJbssC8z36MLAvxORzMIgUfRTzbAJhis/rs:fit:32:32:1/g:ce/aHR0cDovL2Zhdmlj/b25zLnNlYXJjaC5i/cmF2ZS5jb20vaWNv/bnMvZTUxYTE2NmI0/MTNjOGYzMjMwMjk3/MGNkNTA5MjhkODYx/MGVkZTJhMzFkYTQ3/MGVlODY2M2I2OGU1/ODZkNGQyMS9kdWNr/ZHVja2dvLmNvbS8".to_string()),
+                hostname: "duckduckgo.com".to_string(),
+                netloc: "duckduckgo.com".to_string(),
+                scheme: "https".to_string(),
+                path: "s > {{query}}".to_string(),
+            },
         }
-    }
-
-    #[test]
-    fn bang_with_larger_relevance_should_be_greater() {
-        let greater_bang = mock_bang();
-        let lesser_bang = Bang {
-            relevance: 3000,
-            ..greater_bang.clone()
-        };
-
-        assert!(greater_bang > lesser_bang);
     }
 
     #[test]

@@ -17,7 +17,7 @@ use urlencoding::encode;
 static PLUGIN_PREFIX: &str = "!";
 
 /// The placeholder string for the search query.
-static BANGS_PLACEHOLDER: &str = "{{{s}}}";
+static BANGS_PLACEHOLDER: &str = "{query}";
 
 /// The prefix for indicating an inline bang search.
 static BANG_INDICATOR: &str = "!";
